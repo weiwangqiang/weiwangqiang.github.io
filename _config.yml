@@ -1,1 +1,11 @@
-theme: jekyll-theme-time-machine
+# Site settings
+
+title: 小强
+SEOTitle: 窗外蟋蟀的博客 | Keysaim Blog
+header-img: img/home-bg-hill.jpg
+email: keysaim@gmail.com
+description: "描述"
+keyword: "窗外蟋蟀, keysaim"
+url: "https://weiwangqiang.github.io"
+baseurl: ""
+...
