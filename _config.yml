@@ -1,39 +1,128 @@
 # Site settings
+title: Hux Blog
+SEOTitle: é»„ç„çš„åšå®¢ | Hux Blog
+header-img: img/home-bg.jpg
+email: huxpro@gmail.com
+description: "å…³äºå‰ç«¯ä¸è®¾è®¡ã€é»‘å®¢ä¸ç”»å®¶ | é»„ç„ï¼ŒWeb & Mobile Loverï¼ŒSoftware Engineerï¼ŒUX Designer | è¿™é‡Œæ˜¯ @Huxé»„ç„ çš„ä¸ªäººåšå®¢ï¼Œä¸ä½ ä¸€èµ·å‘ç°æ›´å¤§çš„ä¸–ç•Œã€‚"
+keyword: "é»„ç„, Huxé»„ç„, Hux, é¬¼æ ˆ, huxpro, @huxpro, é»„ç„çš„åšå®¢, Hux Blog, åšå®¢, ä¸ªäººç½‘ç«™, äº’è”ç½‘, Web, JavaScript, å‰ç«¯, è®¾è®¡"
+url: "https://huangxuan.me"              # your host, for absolute URL
+baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
-title: Ğ¡Ç¿
-SEOTitle: ´°Íâó¬ó°µÄ²©¿Í | Keysaim Blog
-header-img: img/home-bg-hill.jpg
-email: keysaim@gmail.com
-description: "ÃèÊö"
-keyword: "´°Íâó¬ó°, keysaim"
-url: "https://weiwangqiang.github.io"
-baseurl: ""
-
-# Sidebar 
-settings
-sidebar: true   # ÊÇ·ñ¿ªÆô²à±ßÀ¸.
-
-sidebar-about-description: "²»×°±Æ"
-
-sidebar-avatar:/img/me.png     
+# Publish posts or collection documents with a future date.
+future: true
 
 # SNS settings
 RSS: false
-zhihu_username:     Ğ¡Ç¿
-github_username:    weiwangqiang
+weibo_username:     huxpro
+zhihu_username:     huxpro
+github_username:    huxpro
+twitter_username:   huxpro
+#facebook_username:  huxpro
+#linkedin_username:  firstname-lastname-idxxxx
+
+
+
+# Build settings
+# from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
+highlighter: rouge
+permalink: pretty
+paginate: 10
+exclude: ["less","node_modules","Gruntfile.js","package.json","README.md","README.zh.md"]
+anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
+# If you have timezone issue (e.g. #68) in China, uncomment to use this:
+#timezone: CN  
+
+
+
+# Gems
+# from PR#40, to support local preview for Jekyll 3.0
+# make sure you have this gem installed
+# `$ gem install jekyll-paginate`
+plugins: [jekyll-paginate]
+
+
+
+# Markdown settings
+# replace redcarpet to kramdown,
+# although redcarpet can auto highlight code, the lack of header-id make the catalog impossible, so I switch to kramdown
+# document: http://jekyllrb.com/docs/configuration/#kramdown
+markdown: kramdown
+kramdown:
+  input: GFM                            # use Github Flavored Markdown !important
+
+
+
+# Disqus settings
+disqus_username: hux
+
+# Netease settings
+netease_comment: false
+
+
+
+# Analytics settings
+# Baidu Analytics 
+# ba_track_id: [your track id]
+
+# Google Analytics
+ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
+ga_domain: huangxuan.me
+
+
+
+# Sidebar settings
+sidebar: true                           # whether or not using Sidebar.
+sidebar-about-description: "For the next quantum leap<br>ç¦»å¼€ä¸–ç•Œä¹‹å‰ï¼Œä¸€åˆ‡éƒ½æ˜¯è¿‡ç¨‹"
+sidebar-avatar: /img/avatar-hux-ny.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+
+
 
 # Featured Tags
-featured-tags: true                     # ÊÇ·ñÊ¹ÓÃÊ×Ò³±êÇ©
-featured-condition-size: 0              # ÏàÍ¬±êÇ©ÊıÁ¿´óÓÚÕâ¸öÊı£¬²Å»á³öÏÖÔÚÊ×Ò³
+featured-tags: true                     # whether or not using Feature-Tags
+featured-condition-size: 1              # A tag will be featured if the size of it is more than this condition value
 
 
+
+# Progressive Web Apps
+chrome-tab-theme-color: "#000000"
+service-worker: true
+
+
+
+# Friends
 friends: [
     {
-        title: "csdn blog",
-        href: "https://blog.csdn.net/to_perfect"
+    #     title: "Su",
+    #     href: "http://su.gallery/"
+    # },{
+        title: "ä¹±åº",
+        href: "http://mida.re/"
     },{
-        title: "android",
-        href: "https://developer.android.google.cn/"
+        title: "å‰ç«¯å¤–åˆŠè¯„è®º",
+        href: "http://qianduan.guru/"
+    },{
+        title: "å¤©é•¶çš„åšå®¢",
+        href: "http://lingyu.wang/"
+    },{
+        title: "Luke çš„è‡ªç•™åœ°",
+        href: "http://hmqk1995.github.io"
+    },{
+        title: "Ebn's Blog",
+        href: "http://ebnbin.com/"
+    },{
+        title: "SmdCn's Blog",
+        href: "http://blog.smdcn.net"
+    },{
+        title: "David's Game",
+        href: "https://www.ruoyaowu.com/"
+    },{
+        title: "DHong Say",
+        href: "http://dhong.co"
+    },{
+        title: "å°¹å³°ä»¥ä¸º",
+        href: "http://ingf.github.io/"
+    },{
+        title: "è§£æ—»çš„åšå®¢",
+        href: "http://xieminis.me/"
     }
 ]
-...
