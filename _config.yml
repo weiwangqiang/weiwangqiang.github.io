@@ -1,7 +1,7 @@
 ﻿# Site settings
 title: Weiwq blog
 SEOTitle: 韦王强的博客 | Weiwq Blog
-header-img: img/post-bg-kuaidi.jpg
+header-img: img/post-bg-unix-linux.jpg
 email: 1198039102@qq.com
 description: "android苦逼狗，加班狗枚，正在往后端靠近"
 keyword: "Android，Python，加班狗"
@@ -94,10 +94,10 @@ friends: [
         title: "android",
         href: "https://developer.android.google.cn/"
     },{
-        title: "to_perfect blog",
+        title: "csdn blog",
         href: "https://blog.csdn.net/to_perfect"
     },{
-        title: "my github",
+        title: "github",
         href: "https://github.com/weiwangqiang"
     }
 ]
