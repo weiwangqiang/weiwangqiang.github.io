@@ -1,7 +1,7 @@
 ﻿---
 layout:     post
 title:      "Android单元测试全解"
-subtitle:   " \"开始在这里写blog了\""
+subtitle:   " \"不曾停止\""
 date:       2018-08-17 17:00:00
 author:     "Weiwq"
 header-img: "img/post-bg-2015.jpg"
@@ -45,6 +45,7 @@ public class ExampleUnitTest {
     }
 }
 ```
+
 这就是最简单的Java测试，预热完毕，接下来进入本文的主角
 
 ##2、Android单元测试——Espresso 
@@ -66,6 +67,7 @@ android {
     }
 }
 ```
+
 如果依赖冲突，请加入以下代码：
 
 ```java
@@ -73,8 +75,10 @@ androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2
     exclude group: 'com.android.support', module: 'support-annotations'
 })
 ```
+
 ###2.1获取application
-最常见的应用案例就是，在进行网络测试的时候，如果您的项目很大，编译的时间很长，那么单单为看一个请求结果就要花费相当长的时间，这是不能容忍的，我们可以通过Android的单元测试来模拟请求，如下代码所示。
+最常见的应用案例就是，在进行网络测试的时候，如果您的项目很大，编译的时间很长，那么单单为看一个请求结果就要花费相当长的时间，
+这是不能容忍的，我们可以通过Android的单元测试来模拟请求，如下代码所示。
 
 ```java
 @RunWith(AndroidJUnit4.class)
@@ -94,6 +98,7 @@ public class ExampleInstrumentedTest {
     }
 }
 ```
+
 通过InstrumentationRegistry，我们就可以获取到context对象，再通过context就可以获取application对象，之后就可以构建一个网络请求，**请注意**，在测试方法中，必须使用**同步**请求，否则测试用例会直接忽略回调方法，直接结束程序，导致无法获取到请求结果。
 
 Android单元测试分为：小型测试、中型测试，大型测试，他们的区别如下。
@@ -127,6 +132,7 @@ Android单元测试分为：小型测试、中型测试，大型测试，他们�
 
 </android.support.constraint.ConstraintLayout>
 ```
+
 MainActivity的代码这里就不贴出来了，直接看测试代码：
 
 ```java
@@ -144,6 +150,7 @@ public class MainTest {
     }
 }
 ```
+
 这里简单说明一下：
 
 - **withId(R.id.main_text)：通过ID找到对应的组件，并将其封装成一个Matcher**
@@ -153,21 +160,24 @@ public class MainTest {
 - **closeSoftKeyboard()：关闭软键盘**
 
 以上就是最基本的自动化测试代码。点击Run方法边上的运行按钮，直接运行在设备上即可，效果如下所示。
-<center>
+
 <img src="https://img-blog.csdn.net/2018062019422866?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" width = "40%" height = "40%"  />
-<center>
+
 
 类似的还有点击事件：
 
 ```java
 onView(withId(R.id.main_text)).perform(click());
 ```
+
 双击事件：
 
 ```java
 onView(withId(R.id.main_text)).perform(doubleClick());
 ```
+
 判断是否符合预期
+
 ```java
 onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));           
 ```
@@ -180,16 +190,19 @@ onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));
 ```java
 onView(withText("Hello MainActivity!"));
 ```
+
 那么，如果通过ID和显示的文本不就可以定位唯一的视图了吗？如下
 
 ```java
 onView(allOf(withId(R.id.main_text), withText("Hello MainActivity!")));
 ```
+
 或者这样来筛选不匹配的视图
 
 ```java
 onView(allOf(withId(R.id.button_signin), not(withText("Sign-out"))));
 ```
+
 更多请看[ViewMatchers](https://developer.android.google.cn/reference/android/support/test/espresso/matcher/ViewMatchers)提供的API
 
 接下来看如何模拟listview（GridView和Spinner均适用）的点击事件
@@ -228,6 +241,7 @@ public class ListActivity extends AppCompatActivity {
     }
 }
 ```
+
 &ensp;&ensp;对应的布局文件就是一个listView，item对应的布局是一个textView，这里就不贴出来了，主要看测试类：
 
 ```java
@@ -250,8 +264,8 @@ public class ListViewTest {
                 hasEntry(equalTo(ListActivity.KEY), is("第10列")))).perform(click());
     }
 }
-
 ```
+
 &ensp;&ensp;这里选择数据为**第10行**的item，并执行点击动作，这里着重讲一下**hasEntry**() 这个方法，该方法需要传两个Matcher，也就是map的键名和对应的值。通过map的键、值来唯一确定一个item，拿到对应的item就可以类似于视图一样去执行动作了，效果如下。
 
 <img src="https://img-blog.csdn.net/20180620211305528?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" width = "40%" height = "40%"  />
@@ -266,6 +280,7 @@ public class ListViewTest {
 androidTestCompile 'com.android.support.test.espresso:espresso-contrib:3.0.0'
 androidTestCompile 'com.android.support:recyclerview-v7:25.4.0'
 ```
+
  我们创建一个RecyclerActivity，内容如下：
  
 
@@ -289,6 +304,7 @@ public class RecyclerActivity extends AppCompatActivity {
     }
 }
 ```
+
 &ensp;&ensp;对应的布局文件就是一个recyclerview，item的布局只有一个textView，这里也就不贴出来了，adapter也很简单，给textView一个点击事件，如下：
 
 ```java
@@ -340,6 +356,7 @@ public class RecyclerAdapter<T> extends RecyclerView.Adapter<RecyclerView.ViewHo
     }
 }
 ```
+
 接下来看测试类:
 
 ```java
@@ -359,6 +376,7 @@ public class RecycleViewTest {
     }
 }
 ```
+
 &ensp;&ensp;在run方法中我们可以看到基本与之前的类似，不同的是需要通过RecyclerViewActions类提供的API来执行任务，其中actionOnItemAtPosition的第一个参数是recycleview的item位置，第二个参数是对应的动作，效果与listView的一致，这里就不贴了。
 &ensp;&ensp;这里可以看出，recycleview的测试类要优于listView，listView通过item的值来查找对应的item，而recycleview直接通过位置来查找
 ###2.5 模拟用户点击actionbar
@@ -385,6 +403,7 @@ public class MenuActivity extends AppCompatActivity {
     }
 }
 ```
+
 menu布局代码如下：
 
 ```html
@@ -402,6 +421,7 @@ menu布局代码如下：
 </menu>
 
 ```
+
 测试代码如下：
 
 ```java
@@ -421,6 +441,7 @@ public class MenuTest {
     }
 }
 ```
+
 效果如下：
 ![这里写图片描述](https://img-blog.csdn.net/20180715210107970?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
@@ -465,6 +486,7 @@ public class MyActivityTest {
   }
 }
 ```
+
 [Robolectric社区](http://robolectric.org/)已经有详细的说明，这里就不再赘述
 ##4、Android测试——UI Automator
 先配置依赖
@@ -478,6 +500,7 @@ dependencies {
 
 }
 ```
+
 注意，UI Automator最低支持Android 4.3 (API level 18) 
 
 在MainActivity中有四个组件editText、textView和button，布局就不贴出来了，在MainActivity的Java代码中主要是点击方法中，如下：
@@ -501,6 +524,7 @@ dependencies {
         }
     }
 ```
+
 主要看测试代码，这里创建一个ChangeTextBehaviorTest测试类：
 
 ```java
@@ -590,6 +614,7 @@ public class ChangeTextBehaviorTest {
     }
 }
 ```
+
 该框架的逻辑是模拟用户在使用APP的过程，这个测试用例的主要流程是：用户在桌面点击目标APP，进去，输入字符串，用户点击activityChangeTextBtn组件，跳转到ShowTextActivity，并传入内容，让其显示出来。然后点击changeTextBt组件，显示用户输入内容；
 效果如下
 <img src="https://img-blog.csdn.net/20180715185028699?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" width = "40%" height = "40%" />
@@ -615,6 +640,7 @@ if(okButton.exists() && okButton.isEnabled()) {
     okButton.click();
 }
 ```
+
 如果要访问应用程序中的特定UI组件，请使用UiSelector类。 此类表示当前显示的UI中特定元素的查询。
 如果找到多个匹配元素，则布局层次结构中的第一个匹配元素将作为目标UiObject返回。 构建UiSelector时，可以将多个属性链接在一起以优化搜索。 如果未找到匹配的UI元素，则抛出UiAutomatorObjectNotFoundException。
 我们可以使用childSelector（）方法嵌套多个UiSelector实例。 例如，以下代码示例显示了测试如何指定搜索以在当前显示的UI中查找第一个ListView，然后在该ListView中搜索以查找具有文本属性Apps的UI元素
@@ -626,6 +652,7 @@ UiObject appItem = new UiObject(new UiSelector()
         .childSelector(new UiSelector()
         .text("Apps")));
 ```
+
 一旦您的测试获得了UiObject对象，您就可以调用UiObject类中的方法来对该对象所表示的UI组件执行用户交互。您可以指定以下操作：
 
 - **click（）：单击UI元素可见边界的中心。**
@@ -653,6 +680,7 @@ UiObject checkBox = video.getChild(new UiSelector()
         .className("android.widget.Checkbox"));
 if(!checkBox.isSelected()) checkbox.click();
 ```
+
 对于可滑动视图，可以使用UiScrollable类模拟显示屏上的垂直或水平滚动。 当UI元素位于屏幕外并且您需要滚动以将其置于视图中时，此技术很有用。
 以下代码段显示了如何模拟向下滚动“设置”菜单并单击“关于”平板电脑选项
 
@@ -663,6 +691,7 @@ UiObject about = settingsItem.getChildByText(new UiSelector()
         .className("android.widget.LinearLayout"), "About tablet");
 about.click();
 ```
+
 ##5、总结
 在Android上进行单元测试不容易，需要消耗一定的时间，但是如果需要在不同设备上去测试，UI单元优势就十分明显了，这需要在实际项目中灵活运用
 附上[代码链接](https://github.com/weiwangqiang/AndroidUnitTest/tree/master)
