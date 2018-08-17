@@ -23,13 +23,11 @@ Android自动化测试框架主要有：Espresso、UI Automator以及Robolectric
 ##1、Java单元测试
  Android studio（以下简称as）可以跑纯Java代码，这个想必大家都知道。这里就简单介绍一下as如何跑Java代码，作为热身运动吧！
  首先打开测试包，在app->src->test目录下，如下图所示，其中AndroidTest包是针对Android工作的测试，先不管他。
- <center>
  ![这里写图片描述](https://img-blog.csdn.net/20180619195624409?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
-<center>
 
  这里as为我们创建了一个测试类，直接打开，as中采用Junit4的测试包，主要代码如下。
 
-```
+```java
 @RunWith(JUnit4.class)
 public class ExampleUnitTest {
     @Before
@@ -55,7 +53,7 @@ public class ExampleUnitTest {
 
 先看应用程序的模块级build.gradle依赖：
 
-```
+```java
 dependencies {
      androidTestCompile 'com.android.support:support-annotations:25.4.0'
     androidTestCompile 'com.android.support.test:runner:1.0.0' 
@@ -70,7 +68,7 @@ android {
 ```
 如果依赖冲突，请加入以下代码：
 
-```
+```java
 androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2', {
     exclude group: 'com.android.support', module: 'support-annotations'
 })
@@ -78,7 +76,7 @@ androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2
 ###2.1获取application
 最常见的应用案例就是，在进行网络测试的时候，如果您的项目很大，编译的时间很长，那么单单为看一个请求结果就要花费相当长的时间，这是不能容忍的，我们可以通过Android的单元测试来模拟请求，如下代码所示。
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
     @Before
@@ -108,7 +106,7 @@ Android单元测试分为：小型测试、中型测试，大型测试，他们�
 ###2.2获取对应组件
 该框架提供ActivityTestRule来管理被测试的activity，例如MainActivity对应的布局文件如下
 
-```
+```html
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -131,7 +129,7 @@ Android单元测试分为：小型测试、中型测试，大型测试，他们�
 ```
 MainActivity的代码这里就不贴出来了，直接看测试代码：
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MainTest {
@@ -161,16 +159,16 @@ public class MainTest {
 
 类似的还有点击事件：
 
-```
+```java
 onView(withId(R.id.main_text)).perform(click());
 ```
 双击事件：
 
-```
+```java
 onView(withId(R.id.main_text)).perform(doubleClick());
 ```
 判断是否符合预期
-```
+```java
 onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));           
 ```
 
@@ -179,17 +177,17 @@ onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));
 以上是针对唯一ID的事件，那么如果有多个组件的ID是一样的呢？例如模拟 listView的item点击事件，是如何区分每一个item呢？先看如何处理多个组件ID相同的情况。
 大家知道可以通过ID来查找对应的视图，这里也可以通过显示的文本来查找视图：
 
-```
+```java
 onView(withText("Hello MainActivity!"));
 ```
 那么，如果通过ID和显示的文本不就可以定位唯一的视图了吗？如下
 
-```
+```java
 onView(allOf(withId(R.id.main_text), withText("Hello MainActivity!")));
 ```
 或者这样来筛选不匹配的视图
 
-```
+```java
 onView(allOf(withId(R.id.button_signin), not(withText("Sign-out"))));
 ```
 更多请看[ViewMatchers](https://developer.android.google.cn/reference/android/support/test/espresso/matcher/ViewMatchers)提供的API
