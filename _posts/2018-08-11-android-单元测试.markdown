@@ -20,6 +20,8 @@ tags:
 
 Android自动化测试框架主要有：Espresso、UI Automator以及Robolectric。滴滴~~  开车开车！
 
+
+
 ##1、Java单元测试
 
  Android studio（以下简称as）可以跑纯Java代码，这个想必大家都知道。这里就简单介绍一下as如何跑Java代码，作为热身运动吧！
@@ -49,6 +51,8 @@ public class ExampleUnitTest {
 
 这就是最简单的Java测试，预热完毕，接下来进入本文的主角
 
+
+
 ##2、Android单元测试——Espresso 
 
 &ensp;&ensp;AndroidJUnitRunner类是一个JUnit测试运行器，它允许您在Android设备上运行JUnit 3或JUnit 4样式测试类，包括使用Espresso和UI Automator测试框架的测试类。
@@ -77,6 +81,8 @@ androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2
     exclude group: 'com.android.support', module: 'support-annotations'
 })
 ```
+
+
 
 ###2.1获取application
 
@@ -111,6 +117,8 @@ Android单元测试分为：小型测试、中型测试，大型测试，他们�
 - **大型测试（LargeTest）：可以运行UI流程的测试工作，确保APP按照预期在仿真器或实际设备上工作。最长执行时间为1000ms**
 
 在Android单元测试中可以使用断言来判断变量值是否符合预期，常用的有assertThat、assertEquals、assertNotSame等
+
+
 
 ###2.2获取对应组件
 
@@ -188,6 +196,8 @@ onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));
 ```
 
 更多请看[ViewActions](https://developer.android.google.cn/reference/android/support/test/espresso/action/ViewActions)类提供的API
+
+
 
 ###2.3模拟listView的点击事件
 
@@ -280,6 +290,8 @@ public class ListViewTest {
 &ensp;&ensp;动画比较快，但是可以看到listview先是滚到第10行，然后才执行点击事件，这是因为Espresso负责滚动目标元素，并将元素放在焦点上。
 
 &ensp;&ensp;有同学马上就提出了，recycleView才是主流，用listview的很少了~~，没事，我们来看如何进行recycleView的自动化测试
+
+
 
 ###2.4模拟recycleView点击事件
 
@@ -389,6 +401,8 @@ public class RecycleViewTest {
 &ensp;&ensp;在run方法中我们可以看到基本与之前的类似，不同的是需要通过RecyclerViewActions类提供的API来执行任务，其中actionOnItemAtPosition的第一个参数是recycleview的item位置，第二个参数是对应的动作，效果与listView的一致，这里就不贴了。
 &ensp;&ensp;这里可以看出，recycleview的测试类要优于listView，listView通过item的值来查找对应的item，而recycleview直接通过位置来查找
 
+
+
 ###2.5 模拟用户点击actionbar
 
 新建一个MenuActivity，主要代码如下
@@ -456,6 +470,8 @@ public class MenuTest {
 效果如下：
 ![这里写图片描述](https://img-blog.csdn.net/20180715210107970?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
+
+
 ##3、Android单元测试——Robolectric
 
 &ensp;&ensp;如果您的应用的测试环境需要单元测试与Android框架进行更广泛的交互，则可以使用Robolectric。 该工具可让您在工作站上或常规JVM中的持续集成环境中运行测试，而无需仿真器，几乎与Android设备运行测试的完全保真度相匹配，但仍比执行设备测试更快，支持Android平台的以下几个方面。
@@ -500,6 +516,8 @@ public class MyActivityTest {
 ```
 
 [Robolectric社区](http://robolectric.org/)已经有详细的说明，这里就不再赘述
+
+
 
 ##4、Android测试——UI Automator
 
@@ -705,6 +723,8 @@ UiObject about = settingsItem.getChildByText(new UiSelector()
         .className("android.widget.LinearLayout"), "About tablet");
 about.click();
 ```
+
+
 
 ##5、总结
 
