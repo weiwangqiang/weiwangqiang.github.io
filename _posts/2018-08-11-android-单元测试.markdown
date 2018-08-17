@@ -21,6 +21,7 @@ tags:
 Android自动化测试框架主要有：Espresso、UI Automator以及Robolectric。滴滴~~  开车开车！
 
 ##1、Java单元测试
+
  Android studio（以下简称as）可以跑纯Java代码，这个想必大家都知道。这里就简单介绍一下as如何跑Java代码，作为热身运动吧！
  首先打开测试包，在app->src->test目录下，如下图所示，其中AndroidTest包是针对Android工作的测试，先不管他。
  ![这里写图片描述](https://img-blog.csdn.net/20180619195624409?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
@@ -49,6 +50,7 @@ public class ExampleUnitTest {
 这就是最简单的Java测试，预热完毕，接下来进入本文的主角
 
 ##2、Android单元测试——Espresso 
+
 &ensp;&ensp;AndroidJUnitRunner类是一个JUnit测试运行器，它允许您在Android设备上运行JUnit 3或JUnit 4样式测试类，包括使用Espresso和UI Automator测试框架的测试类。
 &ensp;&ensp;测试运行器与您的JUnit 3和JUnit 4（高达JUnit 4.10）测试兼容。 但是，您应该避免将JUnit 3和JUnit 4测试代码混合在同一个包中，因为这可能会导致意外的结果。 如果您正在创建一个测试JUnit 4测试类以在设备或模拟器上运行，那么您的测试类必须以@RunWith（AndroidJUnit4.class）注释为前缀。
 
@@ -77,6 +79,7 @@ androidTestImplementation('com.android.support.test.espresso:espresso-core:3.0.2
 ```
 
 ###2.1获取application
+
 最常见的应用案例就是，在进行网络测试的时候，如果您的项目很大，编译的时间很长，那么单单为看一个请求结果就要花费相当长的时间，
 这是不能容忍的，我们可以通过Android的单元测试来模拟请求，如下代码所示。
 
@@ -108,7 +111,9 @@ Android单元测试分为：小型测试、中型测试，大型测试，他们�
 - **大型测试（LargeTest）：可以运行UI流程的测试工作，确保APP按照预期在仿真器或实际设备上工作。最长执行时间为1000ms**
 
 在Android单元测试中可以使用断言来判断变量值是否符合预期，常用的有assertThat、assertEquals、assertNotSame等
+
 ###2.2获取对应组件
+
 该框架提供ActivityTestRule来管理被测试的activity，例如MainActivity对应的布局文件如下
 
 ```html
@@ -183,7 +188,9 @@ onView(withId(R.id.main_text)).check(matches(withText("Hello MainActivity!")));
 ```
 
 更多请看[ViewActions](https://developer.android.google.cn/reference/android/support/test/espresso/action/ViewActions)类提供的API
+
 ###2.3模拟listView的点击事件
+
 以上是针对唯一ID的事件，那么如果有多个组件的ID是一样的呢？例如模拟 listView的item点击事件，是如何区分每一个item呢？先看如何处理多个组件ID相同的情况。
 大家知道可以通过ID来查找对应的视图，这里也可以通过显示的文本来查找视图：
 
@@ -273,7 +280,9 @@ public class ListViewTest {
 &ensp;&ensp;动画比较快，但是可以看到listview先是滚到第10行，然后才执行点击事件，这是因为Espresso负责滚动目标元素，并将元素放在焦点上。
 
 &ensp;&ensp;有同学马上就提出了，recycleView才是主流，用listview的很少了~~，没事，我们来看如何进行recycleView的自动化测试
+
 ###2.4模拟recycleView点击事件
+
 对recyclerView进行自动化测试需要再添加以下依赖，**注意**，是在之前的依赖基础上添加以下代码。
 
 ```java
@@ -379,7 +388,9 @@ public class RecycleViewTest {
 
 &ensp;&ensp;在run方法中我们可以看到基本与之前的类似，不同的是需要通过RecyclerViewActions类提供的API来执行任务，其中actionOnItemAtPosition的第一个参数是recycleview的item位置，第二个参数是对应的动作，效果与listView的一致，这里就不贴了。
 &ensp;&ensp;这里可以看出，recycleview的测试类要优于listView，listView通过item的值来查找对应的item，而recycleview直接通过位置来查找
+
 ###2.5 模拟用户点击actionbar
+
 新建一个MenuActivity，主要代码如下
 
 ```java
@@ -446,6 +457,7 @@ public class MenuTest {
 ![这里写图片描述](https://img-blog.csdn.net/20180715210107970?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
 ##3、Android单元测试——Robolectric
+
 &ensp;&ensp;如果您的应用的测试环境需要单元测试与Android框架进行更广泛的交互，则可以使用Robolectric。 该工具可让您在工作站上或常规JVM中的持续集成环境中运行测试，而无需仿真器，几乎与Android设备运行测试的完全保真度相匹配，但仍比执行设备测试更快，支持Android平台的以下几个方面。
 
 - **Android4.1以及更高**
@@ -488,7 +500,9 @@ public class MyActivityTest {
 ```
 
 [Robolectric社区](http://robolectric.org/)已经有详细的说明，这里就不再赘述
+
 ##4、Android测试——UI Automator
+
 先配置依赖
 
 ```java
@@ -693,6 +707,7 @@ about.click();
 ```
 
 ##5、总结
+
 在Android上进行单元测试不容易，需要消耗一定的时间，但是如果需要在不同设备上去测试，UI单元优势就十分明显了，这需要在实际项目中灵活运用
 附上[代码链接](https://github.com/weiwangqiang/AndroidUnitTest/tree/master)
 
