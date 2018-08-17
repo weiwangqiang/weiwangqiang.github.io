@@ -196,7 +196,7 @@ onView(allOf(withId(R.id.button_signin), not(withText("Sign-out"))));
 
 我们先创建一个SecondActivity
 
-```
+```java
 public class ListActivity extends AppCompatActivity {
     private ListView listView ;
     private List<HashMap<String ,String>> data = new ArrayList<>();
@@ -230,7 +230,7 @@ public class ListActivity extends AppCompatActivity {
 ```
 &ensp;&ensp;对应的布局文件就是一个listView，item对应的布局是一个textView，这里就不贴出来了，主要看测试类：
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class ListViewTest {
@@ -254,9 +254,7 @@ public class ListViewTest {
 ```
 &ensp;&ensp;这里选择数据为**第10行**的item，并执行点击动作，这里着重讲一下**hasEntry**() 这个方法，该方法需要传两个Matcher，也就是map的键名和对应的值。通过map的键、值来唯一确定一个item，拿到对应的item就可以类似于视图一样去执行动作了，效果如下。
 
-<center>
 <img src="https://img-blog.csdn.net/20180620211305528?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" width = "40%" height = "40%"  />
-<center>
 
 &ensp;&ensp;动画比较快，但是可以看到listview先是滚到第10行，然后才执行点击事件，这是因为Espresso负责滚动目标元素，并将元素放在焦点上。
 
@@ -264,14 +262,14 @@ public class ListViewTest {
 ###2.4模拟recycleView点击事件
 对recyclerView进行自动化测试需要再添加以下依赖，**注意**，是在之前的依赖基础上添加以下代码。
 
-```
+```java
 androidTestCompile 'com.android.support.test.espresso:espresso-contrib:3.0.0'
 androidTestCompile 'com.android.support:recyclerview-v7:25.4.0'
 ```
  我们创建一个RecyclerActivity，内容如下：
  
 
-```
+```java
 public class RecyclerActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecyclerAdapter<String> adapter;
@@ -293,7 +291,7 @@ public class RecyclerActivity extends AppCompatActivity {
 ```
 &ensp;&ensp;对应的布局文件就是一个recyclerview，item的布局只有一个textView，这里也就不贴出来了，adapter也很简单，给textView一个点击事件，如下：
 
-```
+```java
 public class RecyclerAdapter<T> extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private List<T> data = new ArrayList<>();
     private Context context ;
@@ -344,7 +342,7 @@ public class RecyclerAdapter<T> extends RecyclerView.Adapter<RecyclerView.ViewHo
 ```
 接下来看测试类:
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class RecycleViewTest {
@@ -366,7 +364,7 @@ public class RecycleViewTest {
 ###2.5 模拟用户点击actionbar
 新建一个MenuActivity，主要代码如下
 
-```
+```java
 public class MenuActivity extends AppCompatActivity {
 
     @Override
@@ -389,7 +387,7 @@ public class MenuActivity extends AppCompatActivity {
 ```
 menu布局代码如下：
 
-```
+```html
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:android1="http://schemas.android.com/apk/res-auto">
@@ -406,7 +404,7 @@ menu布局代码如下：
 ```
 测试代码如下：
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MenuTest {
@@ -424,8 +422,6 @@ public class MenuTest {
 }
 ```
 效果如下：
-<center>
-<scr
 ![这里写图片描述](https://img-blog.csdn.net/20180715210107970?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
 ##3、Android单元测试——Robolectric
@@ -439,7 +435,7 @@ public class MenuTest {
 
 grade配置：
 
-```
+```java
 testImplementation "org.robolectric:robolectric:3.8"
 
 android {
@@ -453,7 +449,7 @@ android {
 
 基本用法如下所示。
 
-```
+```java
 @RunWith(RobolectricTestRunner.class)
 public class MyActivityTest {
 
@@ -473,7 +469,7 @@ public class MyActivityTest {
 ##4、Android测试——UI Automator
 先配置依赖
 
-```
+```java
 dependencies {
     androidTestCompile 'com.android.support:support-annotations:25.4.0'
     androidTestCompile 'com.android.support.test:runner:1.0.0' 
@@ -486,7 +482,7 @@ dependencies {
 
 在MainActivity中有四个组件editText、textView和button，布局就不贴出来了，在MainActivity的Java代码中主要是点击方法中，如下：
 
-```
+```java
   @Override
     public void onClick(View view) {
         // Get the text from the EditText view.
@@ -507,7 +503,7 @@ dependencies {
 ```
 主要看测试代码，这里创建一个ChangeTextBehaviorTest测试类：
 
-```
+```java
 @RunWith(AndroidJUnit4.class)
 @SdkSuppress(minSdkVersion = 18)
 public class ChangeTextBehaviorTest {
@@ -596,9 +592,7 @@ public class ChangeTextBehaviorTest {
 ```
 该框架的逻辑是模拟用户在使用APP的过程，这个测试用例的主要流程是：用户在桌面点击目标APP，进去，输入字符串，用户点击activityChangeTextBtn组件，跳转到ShowTextActivity，并传入内容，让其显示出来。然后点击changeTextBt组件，显示用户输入内容；
 效果如下
-<center>
 <img src="https://img-blog.csdn.net/20180715185028699?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70" width = "40%" height = "40%" />
-<center>
 
 该测试类有三个方法，其中在测试前需要获取 UiDevice的实例，步骤如下：
 
@@ -611,7 +605,7 @@ public class ChangeTextBehaviorTest {
 
 当然，也可以通过以下的方式拿到对应的组件：
 
-```
+```java
 UiObject okButton = mDevice.findObject(new UiSelector()
         .text("OK")
         .className("android.widget.Button"));
@@ -625,7 +619,7 @@ if(okButton.exists() && okButton.isEnabled()) {
 如果找到多个匹配元素，则布局层次结构中的第一个匹配元素将作为目标UiObject返回。 构建UiSelector时，可以将多个属性链接在一起以优化搜索。 如果未找到匹配的UI元素，则抛出UiAutomatorObjectNotFoundException。
 我们可以使用childSelector（）方法嵌套多个UiSelector实例。 例如，以下代码示例显示了测试如何指定搜索以在当前显示的UI中查找第一个ListView，然后在该ListView中搜索以查找具有文本属性Apps的UI元素
 
-```
+```java
 UiObject appItem = new UiObject(new UiSelector()
         .className("android.widget.ListView")
         .instance(0)
@@ -641,7 +635,7 @@ UiObject appItem = new UiObject(new UiSelector()
 
 如果测试FrameLayout内容，则需要构建UiCollection，例如以下代码：
 
-```
+```java
 UiCollection videos = new UiCollection(new UiSelector()
         .className("android.widget.FrameLayout"));
 
@@ -662,7 +656,7 @@ if(!checkBox.isSelected()) checkbox.click();
 对于可滑动视图，可以使用UiScrollable类模拟显示屏上的垂直或水平滚动。 当UI元素位于屏幕外并且您需要滚动以将其置于视图中时，此技术很有用。
 以下代码段显示了如何模拟向下滚动“设置”菜单并单击“关于”平板电脑选项
 
-```
+```java
 UiScrollable settingsItem = new UiScrollable(new UiSelector()
         .className("android.widget.ListView"));
 UiObject about = settingsItem.getChildByText(new UiSelector()
