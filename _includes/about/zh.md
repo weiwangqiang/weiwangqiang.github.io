@@ -1,7 +1,7 @@
 ﻿> 写写代码，做做设计，  
 > 离开世界之前，一切都是过程。
 
-Hey，我是韦王强，一个正在蹦极的猴子，多出没于[博客](https://weiwangqiang.github.io)、[知乎](https://www.zhihu.com/people/wei-wang-qiang-70)、
+Hey，我是韦王强，工程師一枚，多出没于[博客](https://weiwangqiang.github.io)、[知乎](https://www.zhihu.com/people/wei-wang-qiang-70)、
 [Github](http://github.com/weiwangqiang)、[csdn](https://blog.csdn.net/to_perfect) 等天空，绝招尚在开发中。
 
 职业是软件攻城狮，目前在 [cvte](http://cvte.com) 从事TV应用层的开发，曾经在[触宝](http://www.chubao.cn/home)实习，业余玩玩Python，用来写写后台，做做自动化相关的工作，争取点亮Python这颗技术树
