@@ -726,13 +726,13 @@ about.click();
 
 
 
-## 5、总结
+## 5、后记
 
 在Android上进行单元测试不容易，需要消耗一定的时间，但是如果需要在不同设备上去测试，UI单元优势就十分明显了，这需要在实际项目中灵活运用
 附上[代码链接](https://github.com/weiwangqiang/AndroidUnitTest/tree/master)
 
 
 
-—— Weiwq 编辑于 2018.08 广州
+—— Weiwq 后记 于 2018.08 广州
 
 
