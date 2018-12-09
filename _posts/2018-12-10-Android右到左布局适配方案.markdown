@@ -13,6 +13,7 @@ tags:
 > “好久没有写blog了，感觉工作了都没有自己的时间了~~”
 
 &emsp;&emsp;呜呼，伊朗的项目终于做完了，大部分都是在整理右到左布局的需求。好在android sdk 从API17（Android4.2）开始支持右到左布局的需求，但是会有很多坑需要去填。
+
 &emsp;&emsp;Android中的大部分组件是支持右到左布局的，只需要在Androidmanifest中配置如下：
 
 ```java
@@ -74,10 +75,13 @@ tags:
 ## 1、textview gravity的右到左布局适配
 
 大家知道textview有一个gravity的属性，其中可以通过以下两种方式指定textview的内容在左边还是在右边
+
 &emsp;&emsp;1) left，right：绝对位置，指定内容显示在textview的左边还是右边，这个比较好理解
+
 &emsp;&emsp;2) start，end：这个大家应该见过，该值作用的结果与系统布局方向有关，如下所示:
 	![在这里插入图片描述](https://img-blog.csdnimg.cn/20181202210017728.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=,size_16,color_FFFFFF,t_70)
 &emsp;&emsp;举一反三，drawableStart，drawableEnd和layout_marginStart，layout_marginEnd以及layout_toStartOf，layout_toEndOf等也是同理，都是相对布局方向而言的。
+
 &emsp;&emsp;有同学马上就会想到，直接指定textview的gravity为start不就解决上面的问题了嘛！修改后的textview如下：
 
 ```xml
@@ -92,6 +96,7 @@ tags:
 效果如下：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20181202202600180.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=,size_16,color_FFFFFF,t_70)
 不对啊，这不按套路出牌呀。内容怎么还是在左边。。。
+
 同学们发现没有，内容是英文的，而伊朗是用波斯语言，会不会与语言有关呢？我们再加一个textView显示波斯语言的：
 
 ```xml
@@ -107,6 +112,7 @@ tags:
 结果如下：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20181202213934999.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=,size_16,color_FFFFFF,t_70)
 是不是反过来了？由于波斯语言是右到左显示的，所以其内容也是默认居右边的。这说明，textview 的内容布局位置与文字显示的方向相关的。为了与伊朗用户的用户习惯保持一致，就算textview的内容是英文的，也应该居右边显示，那么如何做到呢？
+
  Android提供了Java代码动态获取当前布局方向，如下：
 
  ```java
@@ -127,6 +133,7 @@ tags:
  ```
  
 结果大家显然都知道了，这里就不列出来了。
+
 但是这样还是觉得很麻烦，有没有更便捷的属性？有！
 
 name | description | 描述
@@ -263,7 +270,9 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 我们再解除被注释掉的代码，再试试看：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/2018120915521778.gif)
 怎么没有往右下角移动?_? 不是已经设置了leftMargin了么，怎么只有topMargin有效？
+
 在右到左布局下，Android的会从右到左依次绘制view，虽然我们设置了leftMargin，但是，系统在绘制view的时候会以rightMargin约束条件为准，如下图所示，所以就导致了leftMargin无效的问题。
+
 需要注意的是，在右到左布局下，系统坐标并没有改变，getLeft,getTop,getX,getY等值没有发生变化。
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20181209160314779.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=,size_16,color_FFFFFF,t_70)
 所以，我们需要稍作修改 
