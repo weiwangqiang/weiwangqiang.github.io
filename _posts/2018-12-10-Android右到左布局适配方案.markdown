@@ -135,7 +135,9 @@ android:layoutDirection|attribute for setting the direction of a component's lay
 android:textDirection | attribute for setting the direction of a component's text	|设置组件的文字排列方向
 android:textAlignment	|attribute for setting the alignment of a component's text	|设置文字的对齐方式
 getLayoutDirectionFromLocale() |	method for getting the Locale-specified direction	|获取指定地区的惯用布局方式
+
 其中，android:layoutDirection和android:textDirection的值有：
+
 value|type|description
 ------|-----|-----
 inherit|int|Horizontal layout direction is inherited <br> 继承水平方向
@@ -144,6 +146,7 @@ ltr|int|Horizontal layout direction is from Left to Right <br>布局方向是左
 locale|int|Horizontal layout direction is deduced from the default language script for the locale <br>从区域设置的默认语言脚本推导出水平布局方向
 
 android:textAlignment的值有：
+
 Constant|value|Description
 -----|------|------
 center| 4	| Center the paragraph, for example: ALIGN_CENTER.<br> 居中
@@ -153,6 +156,7 @@ textEnd	|3|	Align to the end of the paragraph, for example: ALIGN_OPPOSITE. <br>
 textStart|	2|	Align to the start of the paragraph, for example: ALIGN_NORMAL.<br> 与段落的开头对齐
 viewEnd|	6|	Align to the end of the view, which is ALIGN_RIGHT if the view’s resolved layoutDirection is LTR, and ALIGN_LEFT otherwise.<br> 与view的末尾对齐，
 viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’s resolved layoutDirection is LTR, and ALIGN_RIGHT otherwise.<br> 与view的开头对齐
+
 还是原来的布局，这里多加一行
 
 ```java
@@ -301,7 +305,9 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ## 总结
 
 1、如果使用到drawableLeft、drawableRight属性，请确定图标是否需要跟随系统布局方法改变而改变，如果是，请修改为drawableStart、drawableEnd；反之不用
+
 2、在代码中需要动态修改view的布局约束，例如marginLayoutParams，layoutParams.setMargins()等，需要同时考虑left和right，或者采用修改layout的方式。
+
 3、获取view的位置可以通过以下代码：
 
 ```java
@@ -311,11 +317,14 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
      float y = location[1]
 ```
 
-4、在relativelayout中添加layout rule的时候，用START_OF
-、END_OF代替LEFT_OF、RIGHT_OF。
+4、在relativelayout中添加layout rule的时候，用START_OF、END_OF代替LEFT_OF、RIGHT_OF。
+
 5、在右到左布局下，其坐标布局方式不变，getLeft，getRight等不变。变的是布局约束，view的绘制受right（start）约束。
+
 6、一些方向图标，重新做一个相对方向的放到 mipmap-ldrtl-xxxhdpi 包下
+
 7、textview，editText需要对内容做RTL处理，设置style，详情见第一节
+
 8、在显示文件路径时候，如果包含波斯语，会导致路径显示错误的情况，需要在string的前后加上\u202D 和\u202C
 
 ```java
@@ -325,6 +334,7 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 
 实际显示如下：
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20181209181145449.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3RvX3BlcmZlY3Q=,size_16,color_FFFFFF,t_70)
+
 9、如果需要修改view的位置，请不要使用setX，setY方式。推荐采用ViewGroup.MarginLayoutParams来设置margin，或者采用layout的方式。同时需要注意该约束是相对父view而言的。
 
 —— Weiwq 于 2018.12 广州
