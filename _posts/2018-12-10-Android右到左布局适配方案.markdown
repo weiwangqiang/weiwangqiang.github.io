@@ -2,7 +2,7 @@
 layout:     post
 title:      "Android右到左布局适配方案"
 subtitle:   " \"不曾停止\""
-date:       2018-12-10 23:00:00
+date:       2018-12-10 22:00:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-js-module.jpg"
 catalog: true
@@ -100,7 +100,9 @@ tags:
 ```
 
 效果如下：
+
 ![在这里插入图片描述](/img/blog_android_rtl/img4.png)
+
 不对啊，这不按套路出牌呀。内容怎么还是在左边。。。
 
 同学们发现没有，内容是英文的，而伊朗是用波斯语言，会不会与语言有关呢？我们再加一个textView显示波斯语言的：
@@ -116,7 +118,9 @@ tags:
 ```
 
 结果如下：
+
 ![在这里插入图片描述](/img/blog_android_rtl/img5.png)
+
 是不是反过来了？由于波斯语言是右到左显示的，所以其内容也是默认居右边的。这说明，textview 的内容布局位置与文字显示的方向相关的。为了与伊朗用户的用户习惯保持一致，就算textview的内容是英文的，也应该居右边显示，那么如何做到呢？
 
  Android提供了Java代码动态获取当前布局方向，如下：
@@ -183,7 +187,9 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ```
 
 效果如下
+
 ![在这里插入图片描述](/img/blog_android_rtl/img6.png)
+
 要给辣么多个textview添加该属性，多麻烦！没事，有全局的设置～～
 
 ```java
@@ -230,13 +236,21 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ## 2、组件之间的相对位置
 
 在处理组件之间的相对位置，一般会用到layout_marginLeft，layout_marginRight或者layout_toLeftOf，layout_toRightOf等。那么如果你的app需要兼顾右到左布局的时候，这些布局约束就不合适了，需要用Start，End来代替Left，Right。天呐，如果有几十上百个布局文件，不是要改死程序员了么？别怕，Android studio已经为我们提供了一键适配右到左布局的需求，如下图所示
+
 ![在这里插入图片描述](/img/blog_android_rtl/img7.png)
+
 然后会弹出一个对话框，直接点击“run”
+
 ![在这里插入图片描述](/img/blog_android_rtl/img8.png)
+
 接着会提示你哪些需要添加适配属性的，直接点击“Do Refactor”
+
 ![在这里插入图片描述](/img/blog_android_rtl/img9.png)
+
 如果有不需要修改的，可以选中不修改的文件，或者某一行代码。选择Remove即可
+
 ![在这里插入图片描述](/img/blog_android_rtl/img10.png)
+
 这样我们的布局文件就自定添加start、end属性。
 如果布局中使用了drawableStart或者drawableEnd属性就需要注意了，需要考虑图标是否需要跟随布局方向变化而变化，例如作为方向标示的就不应该变化位置，因此需要依旧使用drawableLeft和drawableRight
 
@@ -272,15 +286,21 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ```
 
 效果如果，我们成功的移动了textview1
+
 ![在这里插入图片描述](/img/blog_android_rtl/img11.gif)
+
 我们再解除被注释掉的代码，再试试看：
+
 ![在这里插入图片描述](/img/blog_android_rtl/img12.gif)
+
 怎么没有往右下角移动?_? 不是已经设置了leftMargin了么，怎么只有topMargin有效？
 
 在右到左布局下，Android的会从右到左依次绘制view，虽然我们设置了leftMargin，但是，系统在绘制view的时候会以rightMargin约束条件为准，如下图所示，所以就导致了leftMargin无效的问题。
 
 需要注意的是，在右到左布局下，系统坐标并没有改变，getLeft,getTop,getX,getY等值没有发生变化。
+
 ![在这里插入图片描述](/img/blog_android_rtl/img13.png)
+
 所以，我们需要稍作修改 
 
 ```java
@@ -296,7 +316,9 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ```
 
 结果如下：
+
 ![在这里插入图片描述](/img/blog_android_rtl/img14.gif)
+
 那如果在右到左布局下，textview的移动动画与左到右布局下一致呢？很简单，同时设置leftMargin和rightMargin即可：
 
 ```java
@@ -315,6 +337,7 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ```
 
 效果如下
+
 ![在这里插入图片描述](/img/blog_android_rtl/img15.gif)
 
 ## 总结
@@ -348,6 +371,7 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 ```
 
 实际显示如下：
+
 ![在这里插入图片描述](/img/blog_android_rtl/img16.png)
 
 9、如果需要修改view的位置，请不要使用setX，setY方式。推荐采用ViewGroup.MarginLayoutParams来设置margin，或者采用layout的方式。同时需要注意该约束是相对父view而言的。
