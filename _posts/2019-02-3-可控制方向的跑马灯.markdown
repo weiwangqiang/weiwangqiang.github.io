@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "Hello 2018"
-subtitle:   " \"基于textview设计可以控制移动方向的跑马灯\""
+title:      "可以控制移动方向的跑马灯"
+subtitle:   " \"基于textview设计\""
 date:       2019-02-3 10:10:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
@@ -134,8 +134,7 @@ public class MarqueeActivity extends BaseActivity {
         android:focusable="true"
         android:marqueeRepeatLimit="marquee_forever"
         android:singleLine="true"
-        android:text="fewfwefwefwefwecwefdwdwq "
-        android:textDirection="ltr" />
+        android:text="fewfwefwefwefwecwefdwdwq "/>
 
 
     <demo.com.rtldemo.view.ControllableMarquee
@@ -145,7 +144,6 @@ public class MarqueeActivity extends BaseActivity {
         android:background="@color/colorAccent"
         android:ellipsize="marquee"
         android:focusable="true"
-        android:gravity="start"
         android:marqueeRepeatLimit="marquee_forever"
         android:singleLine="true"
         android:text=" تنظیمتنظیم تنظیم ضبط:"/>
