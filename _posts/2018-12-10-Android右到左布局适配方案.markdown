@@ -139,7 +139,7 @@ tags:
  然后我们可以通过该方法设置textView的gravity
 
  ```java
-         textView.setGravity(isRtl(this) ? Gravity.RIGHT:Gravity.LEFT);
+   textView.setGravity(isRtl(this) ? Gravity.RIGHT:Gravity.LEFT);
  ```
  
 结果大家显然都知道了，这里就不列出来了。
@@ -254,7 +254,67 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 这样我们的布局文件就自定添加start、end属性。
 如果布局中使用了drawableStart或者drawableEnd属性就需要注意了，需要考虑图标是否需要跟随布局方向变化而变化，例如作为方向标示的就不应该变化位置，因此需要依旧使用drawableLeft和drawableRight
 
-## 3、布局约束的右到左布局适配
+## 3、start，end？
+
+start,end不是已经讲过了吗？很简单，是相对布局方向的。真的是这样的吗？我们来看一段代码
+
+```java
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activity.RelativeActivity">
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:text="button1" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="100dp"
+        android:layout_marginEnd="20dp"
+        android:layout_toEndOf="@+id/button1"
+        android:layoutDirection="ltr"
+        android:paddingStart="50dp"
+        android:text="button2"/>
+
+    <Button
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="20dp"
+        android:layout_toEndOf="@+id/button2"
+        android:text="button3" />
+
+</RelativeLayout>
+```
+
+预览效果如下
+
+![在这里插入图片描述](/img/blog_android_rtl/img17.jpg)
+
+button2同时设置了layout_marginStart和paddingStart，并且指定layoutDirection的方向为ltr。一切是如此和谐～～跑出来的效果如下：
+
+![在这里插入图片描述](/img/blog_android_rtl/img18.jpg)
+
+哎，怎么同是start，作用的位置与预期不一致呢？这里画一张图就明白了：
+
+![在这里插入图片描述](/img/blog_android_rtl/img19.jpg)
+
+当然，如果不手动指定layoutDirection的方向，也就不会出现这个情况了。
+
+从这里可以看出来：start，end是优先考虑view本身的布局方向，其次才是受父viewgroup的布局方向限制
+
+## 4、布局约束的右到左布局适配
 
 在开发中，有时需要动态移动view的位置，一般的做法是修改view的layout，设置x，y轴或者设置marginLayoutParams等，当然还有一般的动画。
 还是我们的mainActivity，对应的布局有两个textview1，textview2，点击textview2会修改textview1的位置，对应的代码如下：
