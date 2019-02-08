@@ -1,6 +1,6 @@
 ﻿# Site settings
 title: Weiwq blog
-SEOTitle: 韦王强的博客 | Weiwq Blog
+SEOTitle: Weiwq的博客 | Weiwq Blog
 header-img: img/post-bg-unix-linux.jpg
 email: 1198039102@qq.com
 description: "android苦逼狗，加班狗枚，正在往后端靠近"
@@ -55,7 +55,7 @@ kramdown:
 disqus_username: weiwangqiang
 
 # Netease settings
-netease_comment: false
+netease_comment: true
 
 
 
