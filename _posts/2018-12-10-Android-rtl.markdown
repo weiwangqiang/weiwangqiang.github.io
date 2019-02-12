@@ -436,4 +436,22 @@ button2同时设置了layout_marginStart和paddingStart，并且指定layoutDire
 
 9、如果需要修改view的位置，请不要使用setX，setY方式。推荐采用ViewGroup.MarginLayoutParams来设置margin，或者采用layout的方式。同时需要注意该约束是相对父view而言的。
 
+10、判断字符串是否是强RTl，常常用于控制textDirection
+
+```java
+   /**
+     * 判断是否是强右到左字符
+     * 如果包含强右到左字符，返回true，反之返回false
+     * @param content 字符
+     * @return 是否是右到左字符
+     */
+    protected boolean isRtlString(String content) {
+        if (TextUtils.isEmpty(content)) {
+            return false;
+        }
+        return TextDirectionHeuristics.ANYRTL_LTR.isRtl(content, 0, content.length());
+    }
+}
+```
+
 —— Weiwq 于 2018.12 广州
