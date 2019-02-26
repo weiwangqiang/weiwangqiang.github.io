@@ -400,6 +400,28 @@ button2同时设置了layout_marginStart和paddingStart，并且指定layoutDire
 
 ![在这里插入图片描述](/img/blog_android_rtl/img15.gif)
 
+## 5、英文，波斯文，阿拉伯数字混排
+
+在项目中，由于英文是强左到右，波斯文是强右到左的，在混排的时候，就会存在文字方向的冲突，需要unicode来强制指定文字的方向，这里做总结。
+
+unicode|说明|翻译：代码
+-----|------|-------
+\u202A|将英文，阿拉伯数字等非强右到左文字放在波斯文等强RTL文字的右边|早上6点： قبل از ظهر  \u202A6
+\u200F|也是将英文，阿拉伯数字放在波斯文的右边，区别是与波斯文之间没有空格|早上6点：قبل از ظهر\u200F6
+\u202E|获取文字的镜像文|12: \u202E21
+
+
+在显示文件路径时候，如果包含波斯语，会导致路径显示错误的情况，需要在string的前后加上\u202D 和\u202C
+
+```java
+        String content = "sdcard\\فارسی\\3D\\فارسی.mp3";
+        textview1.setText("\u202D"+content+"\u202C");
+```
+
+实际显示如下：
+
+![在这里插入图片描述](/img/blog_android_rtl/img16.png)
+
 ## 总结
 
 1、如果使用到drawableLeft、drawableRight属性，请确定图标是否需要跟随系统布局方法改变而改变，如果是，请修改为drawableStart、drawableEnd；反之不用
@@ -423,20 +445,9 @@ button2同时设置了layout_marginStart和paddingStart，并且指定layoutDire
 
 7、textview，editText需要对内容做RTL处理，设置style，详情见第一节
 
-8、在显示文件路径时候，如果包含波斯语，会导致路径显示错误的情况，需要在string的前后加上\u202D 和\u202C
+8、如果需要修改view的位置，请不要使用setX，setY方式。推荐采用ViewGroup.MarginLayoutParams来设置margin，或者采用layout的方式。同时需要注意该约束是相对父view而言的。
 
-```java
-        String content = "sdcard\\فارسی\\3D\\فارسی.mp3";
-        textview1.setText("\u202D"+content+"\u202C");
-```
-
-实际显示如下：
-
-![在这里插入图片描述](/img/blog_android_rtl/img16.png)
-
-9、如果需要修改view的位置，请不要使用setX，setY方式。推荐采用ViewGroup.MarginLayoutParams来设置margin，或者采用layout的方式。同时需要注意该约束是相对父view而言的。
-
-10、判断字符串是否是强RTl，常常用于控制textDirection
+9、判断字符串是否是强RTl，常常用于控制textDirection
 
 ```java
    /**
