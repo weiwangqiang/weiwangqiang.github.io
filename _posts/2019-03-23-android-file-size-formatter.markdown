@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "android格式化文件大小"
-subtitle:   " \"适配不同版本\""
+title:      "Formatter - 适配android不同版本"
+subtitle:   " \"一款很好用的格式化文件大小工具\""
 date:       2019-03-23 20:10:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
