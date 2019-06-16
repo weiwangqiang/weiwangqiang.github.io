@@ -19,6 +19,8 @@ tags:
 
 ## 1、GoogleTranslate代码(入口代码)
 
+注意：如果返回code不为200，请更新cookies
+
 ```java
 #!/usr/bin/python
 # -*- encoding:utf-8 -*-
@@ -107,6 +109,7 @@ if __name__ == '__main__':
 ```
 
 ##2、翻译鉴权
+
 由于Google翻译的接口是收费的，会对翻译内容做一个加密鉴权的限制，可以通过一下方法得到翻译词条的加密字符串，TkParams类的实现如下：
 
 ```java
@@ -224,6 +227,7 @@ def refresh_tkk():
 ```
 
 ##3、语言代码对照表
+
 为了方便使用，这里整理了多国语言对应的缩写，应是比较全了, LanguageMapCode类如下
 
 ```java
