@@ -131,10 +131,19 @@ adb shell dumpsys SurfaceFlinger
 - **[FileVisitor:文件遍历](https://developer.android.com/reference/java/nio/file/FileVisitor)**
 
 
-## 三、Java相关
+## 三、编译
 
 - **[字节码操纵技术探秘](https://www.infoq.cn/article/Living-Matrix-Bytecode-Manipulation)**
 - **[ASM-操纵Java字节码的框架](https://asm.ow2.io/)**
+- [微信Android热补丁实践演进之路](https://mp.weixin.qq.com/s/-NmkSwZu83HAmzKPawdTqQ)
+- [Instant Run 原理（英文）](https://medium.com/google-developers/instant-run-how-does-it-work-294a1633367f#.c088qhdxu)
+- [Instant Run 原理(中文)](https://www.jianshu.com/p/2e23ba9ff14b)
+- [facebook redex编译框架](https://github.com/facebook/redex)
+- [网易HubbleData无痕埋点]([https://neyoufan.github.io/2017/07/11/android/%E7%BD%91%E6%98%93HubbleData%E4%B9%8BAndroid%E6%97%A0%E5%9F%8B%E7%82%B9%E5%AE%9E%E8%B7%B5/](https://neyoufan.github.io/2017/07/11/android/网易HubbleData之Android无埋点实践/))
+- [51 信用卡 Android 自动埋点实践](https://mp.weixin.qq.com/s/P95ATtgT2pgx4bSLCAzi3Q)
+- [JVM文档](https://docs.oracle.com/javase/specs/jvms/se11/html/index.html)
+- [aspectj   java 编程扩展框架](https://time.geekbang.org/column/article/82761)
+- [](https://github.com/HujiangTechnology/gradle_plugin_android_aspectjx)
 
 # 后记
 
