@@ -156,7 +156,9 @@ adb shell am dumpheap <进程PID> /data/boutique.hprof
 
 ```java
 adb shell procrank|grep ${your_package_name}
-adb shell dumpsys meminfo ${your_package_name}（更详细一些）
+adb shell dumpsys meminfo ${your_package_name}  //更详细一些
+adb shell cat /proc/meminfo // 查看系统ram，堆内存等信息
+adb shell procrank //查看系统所有应用的内存使用情况，或者 /system/xbin/procrank
 ```
 3、无kill权限, 杀死进程
 
@@ -169,9 +171,56 @@ am force-stop packageName
 查看资源占用率前5的应用
 
 ```java
-top -m 5
+adb shell top -m 5
 ```
 
+5、在代码里面，给应用打trace，获取对应的火焰图
+
+```java
+// 设置开始记录方法调用情况
+// param1:保存文件的路径
+// param2: 文件最大容量，单位是byte
+Debug.startMethodTracing("/storage/sda1/debug.trace", 50 << 20);
+
+// 结束记录方法调用情况
+Debug.stopMethodTracing();
+```
+
+用Android。studio打开debug.trace文件即可
+
+6、获取cup信息
+
+```java
+adb shell cat /proc/cpuinfo
+```
+7、查看input设备信息
+
+```java
+adb shell cat /proc/bus/input/devices
+```
+
+8、查看ip，mac信息
+
+```java
+adb shell netcfg
+```
+
+9、获取当前activity信息
+
+```java
+adb shell dumpsys window | grep mCurrentFocus
+```
+
+# pm
+
+1、查看apk信息
+
+```java
+pm list packages -f | grep {package关键字} // 查看apk安装路径
+pm dump {packageName} | grep version // 查看apk版本，可以grep其他关键词
+```
+
+2、
 # 系统事件
 
 1、 监听按键事件
@@ -185,9 +234,14 @@ adb shell getevent
 logcat -s AndroidRuntime
 logcat -s ActivityManager,AndroidRuntime,System.err
 ```
+3、在串口下，关闭内核打印
+
+```java
+echo 0 0 0 0 > /proc/sys/kernel/printk
+```
 # gradle编译
 
-在项目目录下：
+在项目目录下输入如下，即可在output目录下获取对应的apk包：
 
 ```java
 $ chmod +x gradlew
