@@ -45,25 +45,26 @@ adb shell setprop debug.layout true
 
 ```java
 
-	/**
-     * Turn on to draw dirty regions every other frame.
-     *
-     * Possible values:
-     * "true", to enable dirty regions debugging
-     * "false", to disable dirty regions debugging
-     *
-     */
-	adb shell setprop debug.hwui.show_dirty_regions true
-	/**
-     * System property used to enable or disable dirty regions invalidation.
-     * This property is only queried if {@link #RENDER_DIRTY_REGIONS} is true.
-     * The default value of this property is assumed to be true.
-     *
-     * Possible values:
-     * "true", to enable partial invalidates
-     * "false", to disable partial invalidates
-     */
-	adb shell setprop debug.hwui.render_dirty_regions true
+/**
+* Turn on to draw dirty regions every other frame.
+*
+* Possible values:
+* "true", to enable dirty regions debugging
+* "false", to disable dirty regions debugging
+*
+*/
+adb shell setprop debug.hwui.show_dirty_regions true
+
+/**
+* System property used to enable or disable dirty regions invalidation.
+* This property is only queried if {@link #RENDER_DIRTY_REGIONS} is true.
+* The default value of this property is assumed to be true.
+*
+* Possible values:
+* "true", to enable partial invalidates
+* "false", to disable partial invalidates
+*/
+adb shell setprop debug.hwui.render_dirty_regions true
 	
 ```
 
