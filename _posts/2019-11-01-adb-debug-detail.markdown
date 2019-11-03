@@ -1,3 +1,4 @@
+---
 layout:     post
 title:      "深度解剖adb的命令"
 subtitle:   " \"你知道adb怎么用吗\""
@@ -6,8 +7,8 @@ author:     "Weiwq"
 header-img: "img/background/home-bg-geek.jpg"
 catalog: true
 tags:
-
-    - android
+    - Android
+---
 
 > “adb? 难吗？不难吧？“
 
@@ -184,6 +185,7 @@ pm详细命令如下：
 | grant **package_name** **permission**    | 向应用授予权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | revoke **package_name** **permission**   | 从应用中撤消权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | trim-caches **desired_free_space**       | 减少缓存文件以达到指定的可用空间。                           |
+
 ## 7、dpm 命令解析
 
 `dmp`	即调用设备政策管理器，为便于您开发和测试设备管理（或其他企业）应用，您可以向设备政策管理器 (`dpm`) 工具发出命令。使用该工具可控制 Active Admin 应用，或更改设备上的政策状态数据。在 shell 中，相应的语法为：
