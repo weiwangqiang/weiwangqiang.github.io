@@ -12,7 +12,7 @@ tags:
 
 > “adb? 难吗？不难吧？“
 
-##1、adb官方介绍
+## 1、adb官方介绍
 
 Android 调试桥 (adb) 是一种功能多样的命令行工具，可让您与设备进行通信。adb 命令便于执行各种设备操作（例如安装和调试应用），并提供对 Unix shell（可用来在设备上运行各种命令）的访问权限。它是一种客户端-服务器程序，包括以下三个组件：
 
@@ -80,13 +80,19 @@ generic_x86:/ $
 
 | 命令                       | 说明       |
 | :-----------: | :-------------------- |
-| adb install [option]  apkFile | -r：替换现有的应用。<br>-d：降版本安装。 <br>-g：授权所有运行时候需要的权限。<br>-s：在sdcard上安装。<br>--abi abi-identifier：针对特定 [ABI](https://developer.android.com/ndk/guides/abis?hl=zh-cn#sa) 强制安装应用。<br>-t：允许安装测试软件包。如果使用开发者预览版 SDK<br>（如果 `targetSdkVersion` 是字母，而非数字）编译 APK，则安装测试 APK 时必须在 install 命令中包含 `-t` 选项。 |
+| adb install [option]  apkFile | `-r`：替换现有的应用。<br>`-d`：降版本安装。 <br>`-g`：授权所有运行时候需要的权限。<br>`-s`：在sdcard上安装。<br>`--abi abi-identifier`：针对特定 [ABI](https://developer.android.com/ndk/guides/abis?hl=zh-cn#sa) 强制安装应用。<br>`-t`：允许安装测试软件包。如果使用开发者预览版 SDK<br>（如果 `targetSdkVersion` 是字母，而非数字）编译 APK，则安装测试 APK 时必须在 install 命令中包含 `-t` 选项。 |
 | adb uninstall [-k] packageName | 从设备中移除此应用软件包。添加 `-k` 选项可保存数据和缓存目录。 |
 | adb usb | 重新启动USB上的adbd监听 |
 | adb tcpip PORT | 重新启动adbd侦听PORT上的TCP |
 | adb reboot [bootloader] [recovery]  [sideload] [sideload-auto-reboot] | 重新启动设备； 默认启动系统映像，但是也支持引导加载程序和恢复。 侧载重启进入恢复状态并自动启动侧载模式，sideload-auto-reboot相同，但是在侧载后重新启动。 |
 | adb reconnect | 从主机端剔除连接以强制重新连接 |
 | adb reconnect device | 从设备强制重新连接。 |
+|adb  reconnect offline | 重置离线/未经授权的设备以强制重新连接 |
+|adb connect  HOST[:PORT]| 通过网络连接设备，默认端口是5555 |
+|adb disconnect [HOST[:PORT]]|断开指定的网络连接，不设置host，port，则断开全部|
+|adb backup [option] ... |可以通过该命令备份apk或者系统信息，<br>其中options包含：<br>`-f file`：指定备份的位置，如-f  backup.ab<br>`-all`: 备份全部<br>`-apk|-noapk`:是否在备份里包含apk或者仅仅只备份应用数据，默认的是-noapk<br>`-all`: 包含全部应用<br>`-system|-nosystem`:决定-all标签是否包含系统应用，默认的是-system<br>`[PACKAGE..]`: 指定备份的应用包名，如：adb backup com.demo.package<br>`-shared|-noshared`:决定是否备份设备共享的SD card内容，默认是-noshare<br> `-obb-noobb` : 是否包含obb文件，默认是-noobb|
+|adb restore [file] |恢复应用数据，例如：adb restore backup.ab|
+| ||
 
 ## 4、shell 命令解析
 
