@@ -1,9 +1,9 @@
 layout:     post
 title:      "深度解剖adb的命令"
 subtitle:   " \"你知道adb怎么用吗\""
-date:       2019-11-01 21:30:00
+date:       2019-11-03 21:30:00
 author:     "Weiwq"
-header-img: "img/background/post-bg-re-vs-ng2.jpg"
+header-img: "img/background/home-bg-geek.jpg"
 catalog: true
 tags:
 
@@ -20,7 +20,6 @@ Android 调试桥 (adb) 是一种功能多样的命令行工具，可让您与�
 - **服务器**：管理客户端和守护进程之间的通信。服务器在开发计算机上作为后台进程运行。
 
 本文不会列出如何搭建，连接adb的步骤，详细可以见 [在硬件设备上运行应用](https://developer.android.com/studio/run/device?hl=zh-cn)
-
 
 
 ## 2、adb 基本用法
