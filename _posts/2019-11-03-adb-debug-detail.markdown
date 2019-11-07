@@ -90,7 +90,7 @@ generic_x86:/ $
 |adb  reconnect offline | 重置离线/未经授权的设备以强制重新连接 |
 |adb connect  HOST[:PORT]| 通过网络连接设备，默认端口是5555 |
 |adb disconnect [HOST[:PORT]]|断开指定的网络连接，不设置host，port，则断开全部|
-|adb backup [option] ... |可以通过该命令备份apk或者系统信息，<br>其中options包含：<br>`-f file`：指定备份的位置，如-f  backup.ab<br>`-all`: 备份全部<br>`-apk|-noapk`:是否在备份里包含apk或者仅仅只备份应用数据，默认的是-noapk<br>`-all`: 包含全部应用<br>`-system|-nosystem`:决定-all标签是否包含系统应用，默认的是-system<br>`[PACKAGE..]`: 指定备份的应用包名，如：adb backup com.demo.package<br>`-shared|-noshared`:决定是否备份设备共享的SD card内容，默认是-noshare<br> `-obb-noobb` : 是否包含obb文件，默认是-noobb|
+|adb backup [option] ... |可以通过该命令备份apk或者系统信息，<br>其中options包含：<br><br>`-f file`：指定备份的位置，如-f  backup.ab<br><br/>`-all`: 备份全部<br><br/>`-apk|-noapk`:是否在备份里包含apk或者仅仅只备份应用数据，默认的是-noapk<br><br/>`-all`: 包含全部应用<br><br/>`-system|-nosystem`:决定-all标签是否包含系统应用，默认的是-system<br><br/>`[PACKAGE..]`: 指定备份的应用包名，如：adb backup com.demo.package<br><br/>`-shared|-noshared`:决定是否备份设备共享的SD card内容，默认是-noshare<br><br/> `-obb-noobb` : 是否包含obb文件，默认是-noobb|
 |adb restore [file] |恢复应用数据，例如：adb restore backup.ab|
 | ||
 
@@ -149,12 +149,12 @@ adb shell am start -a  android.intent.action.VIEW
 
 | 命令                                         | 说明                                                         |
 | :------------------------------------------- | ------------------------------------------------------------ |
-| start [**options**] **intent**               | 启动 `intent` 指定的 `Activity`。 请参阅intent规范<br>其中***options***包括<br> `-D`：启用调试。<br>`--start-profiler file`：启动分析器并将结果发送到 `file`。<br>`-P file`：类似于 `--start-profiler`，但当应用进入空闲状态时分析停止。<br>`-R count`：重复启动 Activity `count` 次。在每次重复前，将完成顶层 Activity。<br>`-S`：启动 Activity 前强行停止目标应用。<br>`--opengl-trace`：启用对 OpenGL 函数的跟踪。 |
+| start [**options**] **intent**               | 启动 `intent` 指定的 `Activity`。 请参阅intent规范<br>其中***options***包括<br><br/> `-D`：启用调试。<br><br/>`--start-profiler file`：启动分析器并将结果发送到 `file`。<br><br/>`-P file`：类似于 `--start-profiler`，但当应用进入空闲状态时分析停止。<br><br/>`-R count`：重复启动 Activity `count` 次。在每次重复前，将完成顶层 Activity。<br><br/>`-S`：启动 Activity 前强行停止目标应用。<br><br/>`--opengl-trace`：启用对 OpenGL 函数的跟踪。 |
 | startservice [**options**] **intent**        | 启动 `intent` 指定的 `Service`。请参阅intent规范             |
 | force-stop **package**                       | 强行停止与 `package`（应用的软件包名称）关联的所有进程。     |
 | kill-all                                     | 终止所有后台进程                                             |
 | broadcast [options] intent                   | 发出广播 intent。请参阅intent规范                            |
-| instrument [**options**] **component**       | 使用 `Instrumentation` 实例启动监控。通常情况下，目标 `component` 是 `test_package/runner_class` 格式。<br>具体options选项包括：<br>`-r`：输出原始结果（否则对 `report_key_streamresult` 进行解码）。与 `[-e perf true]` 结合使用以生成性能测量值的原始输出。<br>`-e name value`：将参数 `name` 设为 `value`。对于测试运行器，通用格式为 `-e testrunner_flag value[,value...]`。<br>`-p file`：将分析数据写入 `file`。<br>`-w`：先等待插桩完成，然后再返回。测试运行器需要使用此选项。 |
+| instrument [**options**] **component**       | 使用 `Instrumentation` 实例启动监控。通常情况下，目标 `component` 是 `test_package/runner_class` 格式。<br>具体options选项包括：<br><br/>`-r`：输出原始结果（否则对 `report_key_streamresult` 进行解码）。与 `[-e perf true]` 结合使用以生成性能测量值的原始输出。<br><br/>`-e name value`：将参数 `name` 设为 `value`。对于测试运行器，通用格式为 `-e testrunner_flag value[,value...]`。<br><br/>`-p file`：将分析数据写入 `file`。<br><br/>`-w`：先等待插桩完成，然后再返回。测试运行器需要使用此选项。 |
 | profile start **process** **file**           | 启动 `process` 的分析器，将结果写入 `file`。                 |
 | profile stop **process**                     | 停止 `process` 的分析器。                                    |
 | dumpheap [**options**] **process** **file**  | 转储 `process` 的堆，写入 `file`。<br>具体options选项包括：<br>`-n`：转储原生堆，而非托管堆。<br>`--user [user_id | current] ` 提供进程名称时，指定要转储的进程的用户；如果未指定，则使用当前用户。 |
