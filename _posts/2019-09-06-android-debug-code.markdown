@@ -285,6 +285,7 @@ echo 0 0 0 0 > /proc/sys/kernel/printk
 
 $ chmod +x gradlew
 $ ./gradlew assembleDebug
+$ gradlew processDebugManifest --stacktrace //查看manifest在编译时候的错误（如果有）
 
 ```
 
