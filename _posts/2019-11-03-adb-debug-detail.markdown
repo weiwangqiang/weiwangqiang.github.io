@@ -219,8 +219,8 @@ pm详细命令如下：
 | install [**options**] `<apkPath>`   | 将软件包（通过 `path` 指定）安装到系统。<br>具体options选项参考`adb install`命令 |
 | uninstall [**options**] `<package>`  | 从系统中移除软件包。具体选项：<br>`-k`：移除软件包后保留数据和缓存目录。 |
 | clear `<package>`                    | 删除与软件包关联的所有数据。                                 |
-| enable `<package_or_component>`      | 启用指定软件包或组件（表示为“package/class”）。示例：<br>`pm enable com.cvte.demotv/com.cvte.demotv.MainActivity` |
-| disable `<package_or_component>`     | 停用指定软件包或组件（表示为“package/class”）。示例：<br>`pm disable com.cvte.demotv/com.cvte.demotv.MainActivity` |
+| enable `<package_or_component>`      | 启用指定软件包或组件（表示为“package/class”，需要root权限）。示例：<br>`pm enable com.cvte.demotv/com.cvte.demotv.MainActivity` |
+| disable `<package_or_component>`     | 停用指定软件包或组件（表示为“package/class”，需要root权限）。示例：<br>`pm disable com.cvte.demotv/com.cvte.demotv.MainActivity` |
 | grant `<package_name>` `<permission>` | 向应用授予权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | revoke `<package_name>` **permission** | 从应用中撤消权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | trim-caches `<desired_free_space>`   | 减少缓存文件以达到指定的可用空间。                           |
