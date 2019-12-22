@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "波斯日历"
-subtitle:   " \"波斯日历的Java实现\""
+subtitle:   " \"波斯日历和公历的互相转换，波斯日历的加减实现\""
 date:       2019-12-22 16:30:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-os-metro.jpg"
@@ -10,7 +10,7 @@ tags:
     - Android
 ---
 
-> “波斯日历和公历的互相转换，波斯日历的加减“
+> “波斯日历工具库的Java实现“
 
 ## 1、简介
 
