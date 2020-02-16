@@ -23,7 +23,7 @@ adb shell setprop debug.layout true
 
 然后重新启动应用生效
 
-![在这里插入图片描述](/img/blog_android_debug_code/2.png)
+![在这里插入图片描述](/img/blog_android_debug_code/2.png){:height="250" width="250"}
 
 同理，关闭如下
 
@@ -45,7 +45,7 @@ adb shell setprop debug.hwui.overdraw show
  
 ```
 
-![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="500" width="500"}
+![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="250" width="250"}
 
 
 3、查看dirty区域：
@@ -116,7 +116,7 @@ adb shell setprop debug.hwui.profile #{value}
 	 
 ```
 
-![在这里插入图片描述](/img/blog_android_debug_code/1.png)
+![在这里插入图片描述](/img/blog_android_debug_code/1.png){:height="250" width="250"}
 
 7、设置GPU 最大帧数
 
