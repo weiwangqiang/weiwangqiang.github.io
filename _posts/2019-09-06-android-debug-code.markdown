@@ -45,11 +45,8 @@ adb shell setprop debug.hwui.overdraw show
  
 ```
 
-![在这里插入图片描述](/img/blog_android_debug_code/3.png)
+![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="500" width="500"}
 
-![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="100" width="100"}
-
-<img style="width:50%;height:50%" src="/img/blog_android_debug_code/3.png"  alt="" align=center />
 
 3、查看dirty区域：
 
