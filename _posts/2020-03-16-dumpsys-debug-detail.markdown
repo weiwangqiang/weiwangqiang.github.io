@@ -1,6 +1,4 @@
 ---
-overlayoverlay
-
 layout:     post
 title:      "android调试——教你用dumpsys命令调试"
 subtitle:   " \"聊聊dumpsys的用法\""
@@ -12,7 +10,7 @@ tags:
     - android
 ---
 
-> “这一篇就聊聊dumpsys“
+> “这一篇就聊聊dumpsys 比较常用的命令“
 
 ### dumpsys 服务
 
@@ -54,11 +52,7 @@ adb shell dumpsys activity
 Static screen stats:
   < 1 frames: 0.335 s (1.5%) // 每帧的耗时情况
   < 2 frames: 2.049 s (9.1%)
-  < 3 frames: 0.219 s (1.0%)
-  < 4 frames: 0.064 s (0.3%)
-  < 5 frames: 0.143 s (0.6%)
-  < 6 frames: 0.000 s (0.0%)
-  < 7 frames: 0.101 s (0.4%)
+	。。。。
   7+ frames: 19.625 s (87.1%)
 ```
 
