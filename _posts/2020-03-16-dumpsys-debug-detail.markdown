@@ -17,7 +17,9 @@ tags:
 基本用法
 
 ```java
+
 adb shell dumpsys [-t timeout] [--help | -l | --skip services | service [arguments] | -c | -h]
+
 ```
 
 查看可与 `dumpsys` 配合使用的系统服务的完整列表，请使用以下命令：
@@ -153,7 +155,9 @@ mDisplayInfos=
 查看IP，网关（ifconfig也能查看)
 
 ```java
+
 onNewDhcpResults({IP address 172.19.110.23/24 Gateway 172.19.110.1  DNS servers: [ 10.254.254.254 ] Domains gz.cvte.cn DHCP server /10.22.4.10 Vendor info null lease 7200 seconds})
+
 ```
 
  ### 7、dumpsys  meminfo
