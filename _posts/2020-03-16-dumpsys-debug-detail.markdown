@@ -101,19 +101,125 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 ### 2、dumpsys activity
 
-| 命令                               | 功能                                                         |
-| ---------------------------------- | ------------------------------------------------------------ |
-| dumpsys activity o                 | 1）OOM等级信息<br>2）全部应用内存情况，是否达到OOM<br>3）获取home进程，上一次的进程 |
-| dumpsys activity a                 | 从顶部到底部打印 TaskRecord（activity） 信息，包含<br>Intent：启动activity的intent信息<br>baseDir：apk安装路径<br>CurrentConfiguration：语言、屏幕参数，显示区域，启动模式<br>lastLaunchTime：距离上次启动的时间间隔<br>state：生命周期状态，还有 stopped=false delayedResume=false finishing=false<br>connections：连接的服务（如果有连接）<br>ResumedActivity：栈顶的activity |
-| dumpsys activity r                 | 打印最近的TaskRecord信息，信息内容与a参数的类似              |
-| dumpsys activity  b [PACKAGE_NAME] | 打印指定包的广播状态，包含<br>Registered Receivers：已经注册的广播接收器action信息<br>mHandler：创建的handler信息 |
-| dumpsys activity p [PACKAGE_NAME]  | 打印指定包创建的进程信息，包含<br>requiredAbi：要求的架构<br>lastSwapPss：内存使用情况<br>lastCpuTime：上次CPU时间<br>lastRequestedGc：上次GC请求<br>Connections：连接的服务信息<br>Published Providers：公开的内容提供者<br> |
-| dumpsys activity s                 | 打印ServiceRecord信息，包含<br>intent：intent信息<br>packageName：包名<br>IntentBindRecord：已绑定该服务的信息 |
-| dumpsys activity settings          | 打印当前系统配置信息，包含<br>gc_timeout：GC超时时间<br>gc_min_interval：GC最小间隔<br>service_bg_start_timeout：后台启动service超时时间 |
-| dumpsys activity all               | 打印全部的activity，包含<br>生命周期状态<br>View Hierarchy:  view的层次结构 |
-| dumpsys activity top               | 与all参数类似，但是只打印顶层activity的信息                  |
-| dumpsys activity starter           | 打印启动                                                     |
-| dumpsys activity lastanr           | 打印 ANR list信息                                            |
+- **dumpsys activity o**
+
+  获取OOM等级信息，home进程、上一次的进程内容
+
+  ```java
+  generic_x86:/ $ dumpsys activity o
+    OOM levels:
+      -900: SYSTEM_ADJ (   32,768K) 。。。
+        
+    mHomeProcess: ProcessRecord{a3cea50 18515:com.android.launcher3/u0a19}
+    mPreviousProcess: ProcessRecord{3758933 23311:com.android.settings/1000}
+  ```
+
+- **dumpsys activity a**
+
+  从顶部到底部打印 TaskRecord（activity） 信息，包含如下内容
+
+  ```java
+  * TaskRecord{9e6567 #150 A=com.android.settings U=0 StackId=1 sz=2}
+    * Hist #1: ActivityRecord{e5fb34f u0 com.android.settings/.Settings$MemorySettingsActivity t150}
+            packageName=com.android.settings processName=com.android.settings
+            launchedFromUid=1000 launchedFromPackage=com.android.settings userId=0
+            app=ProcessRecord{3758933 23311:com.android.settings/1000}
+            Intent { flg=0x8000 cmp=com.android.settings/.Settings$MemorySettingsActivity (has extras) }
+            frontOfTask=false task=TaskRecord{9e6567 #150 A=com.android.settings U=0 StackId=1 sz=2}
+            taskAffinity=null
+            realActivity=com.android.settings/.Settings$MemorySettingsActivity
+            baseDir=/system/priv-app/Settings/Settings.apk
+            dataDir=/data/user_de/0/com.android.settings
+            state=RESUMED stopped=false delayedResume=false finishing=false
+  ```
+
+- **dumpsys activity r**
+
+  打印最近的TaskRecord信息，信息内容与a参数的类似
+
+- **dumpsys activity  b [PACKAGE_NAME]**
+
+  打印指定包创建的进程信息，包含已经注册的广播接收器action信息，创建的handler
+
+  ```java
+  generic_x86:/ $ dumpsys activity b com.google.android.ext.services
+  ACTIVITY MANAGER BROADCAST STATE (dumpsys activity broadcasts)
+  
+    mBroadcastsScheduled [foreground]=false
+    mBroadcastsScheduled [background]=false
+    mHandler:
+      Handler (com.android.server.am.ActivityManagerService$MainHandler) {32cc7bf} @ 26049725
+        Looper (ActivityManager, tid 16) {ba76e8c}
+          Message 0: { when=+8m0s963ms what=27 target=com.android.server.am.ActivityManagerService$MainHandler }
+          Message 1: { when=+10m14s258ms callback=com.android.server.am.ActiveServices$1 target=com.android.server.am.ActivityManagerService$MainHandler }
+          Message 2: { when=+23m38s921ms callback=com.android.server.AppOpsService$1 target=com.android.server.am.ActivityManagerService$MainHandler }
+          (Total messages: 3, polling=true, quitting=false)
+  ```
+
+- **dumpsys activity p [PACKAGE_NAME]**
+
+  打印指定包创建的进程信息，包含：<br>
+
+  requiredAbi：要求的架构<br>lastSwapPss：内存使用情况<br>lastRequestedGc：上次GC请求<br>
+
+  ```java
+  generic_x86:/ $ dumpsys activity p com.google.android.ext.services
+  ACTIVITY MANAGER RUNNING PROCESSES (dumpsys activity processes)
+    requiredAbi=x86 instructionSet=null
+    adjSeq=18970 lruSeq=0 lastPss=4.1MB lastSwapPss=0.00 lastCachedPss=0.00 lastCachedSwapPss=0.00
+    lastRequestedGc=-4h9m54s33ms lastLowMemory=-4h9m54s33ms reportLowMemory=false .....
+    
+  ```
+
+- **dumpsys activity s**
+
+  打印ServiceRecord信息，包含<br>intent：intent信息<br>packageName：包名<br>IntentBindRecord：已绑定该服务的信息
+
+  ```java
+  
+  ServiceRecord{a4d66c6 u0 com.android.chrome/org.chromium.chrome.browser.omaha.OmahaClient}
+      intent={act=org.chromium.chrome.browser.omaha.ACTION_REGISTER_REQUEST cmp=com.android.chrome/org.chromium.chrome.browser.omaha.OmahaClient}
+      packageName=com.android.chrome ....
+  ```
+
+- **dumpsys activity settings**
+
+  打印ServiceRecord信息，包含<br>intent：intent信息<br>packageName：包名<br>IntentBindRecord：已绑定该服务的信息
+
+  ```java
+  generic_x86:/ $ dumpsys activity settings
+  TASK com.android.settings id=150
+    ACTIVITY com.android.settings/.Settings$MemorySettingsActivity e5fb34f pid=23311
+      Local Activity ebdaec State:
+        mResumed=true mStopped=false mFinished=false .....
+  ```
+
+- **dumpsys activity all**
+
+  打印全部的activity，包含<br>生命周期状态<br>View Hierarchy:  view的层次结构
+
+  ```java
+  generic_x86:/ $ dumpsys activity all
+  TASK com.example.flutter_web id=149  ...
+    
+      View Hierarchy:
+        DecorView@6f37f9c[MainActivity]
+          android.widget.LinearLayout{5370da5 V.E...... .......D 0,0-1080,1794}
+            android.view.ViewStub{137457a G.E...... ......I. 0,0-0,0 #10203e8 android:id/action_mode_bar_stub}
+            android.widget.FrameLayout{20ff12b V.E...... .......D 0,0-1080,1794 #1020002 android:id/content} ....
+  ```
+
+- **dumpsys activity top**
+
+  与all参数类似，但是只打印顶层activity的信息
+  
+- **dumpsys activity starter**
+
+  打印对应的启动者
+
+- **dumpsys activity lastanr**
+
+  打印 ANR list信息
 
 ### 3、 dumpsys cpuinfo
 
