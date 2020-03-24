@@ -266,7 +266,7 @@ onNewDhcpResults({IP address 172.19.110.23/24 Gateway 172.19.110.1  DNS servers:
 
 ```
 
- ### 7、dumpsys  meminfo
+### 7、dumpsys  meminfo
 
 查看系统各个应用内存使用情况
 
@@ -332,7 +332,7 @@ com.android.systemui.theme.dark:0 {
   
 - **dumpsys package r**
 
-  列举 所有的 [activity|service|receiver|content ] intent 解析器，其中包含各个应用的入口，action对应的组件
+  列举 所有的 `[activity|service|receiver|content]` intent 解析器，其中包含各个应用的入口，action对应的组件
   
   ```java
   Activity Resolver Table: // activity 入口
@@ -392,7 +392,7 @@ com.android.systemui.theme.dark:0 {
   
   获取所有已经安装的apk包信息，内容展示的格式与 *dumpsys package permission* 类似，这里就不做举例
   
-- **dumpsys package  <package.name>**
+- **dumpsys package `<package.name>`**
   
   获取指定包的信息，可以获取到四大组件的信息，包信息（版本信息，lib库），已经请求的权限，安装需要的权限，运行时权限，shareUser信息（可以判断是否是系统应用）
   
@@ -424,7 +424,7 @@ com.android.systemui.theme.dark:0 {
         gids=[2001, 1065, 1023, 3003, 3007, 1024]
   ```
   
-- **dumpsys package  check-permission <permission> <package>**
+- **dumpsys package  check-permission `<permission> <package>`**
   
   检查对应的包是否已经获得对应的权限
   
