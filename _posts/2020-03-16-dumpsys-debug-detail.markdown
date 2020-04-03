@@ -436,7 +436,7 @@ com.android.systemui.theme.dark:0 {
   ```
 ### 10、dumpsys power
 
-  可以查看电池状态
+可以查看电池状态
 
 ```java
 mBatteryLevel=100 // 电量
