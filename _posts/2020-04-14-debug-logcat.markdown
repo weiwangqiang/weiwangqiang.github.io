@@ -33,25 +33,24 @@ logcat -s demo
 
 |选项|说明|
 |---|----|
-|-s|相当于过滤器表达式 `'*:S'` <br> 例如：logcat -s demo|
-|-f <file>|--file=<file> <br>设置logcat 内容保存的位置，默认是stdout<br> 例如:  logcat -f sdcard/log.txt|
-|-r <kbytes>|--rotate-kbytes=<kbytes> <br>每输出 `<kbytes>` 时轮替日志文件，默认是16 <br> 例如：logcat -f sdcard/log.txt -r 1|
-|-b <buffer>|加载可供查看的备用日志缓冲区，例如 `events` 或 `radio`。<br>默认使用 `main`、`system` 和 `crash` 缓冲区集。<br>请参阅[查看备用日志缓冲区](https://developer.android.google.cn/tools/debugging/debugging-log#alternativeBuffers)|
-|-c|--clear <br/>清除（清空）所选的缓冲区并退出。<br>默认缓冲区集为 `main`、`system` 和 `crash`。<br>要清除所有缓冲区，请使用 `-b all -c`。|
-|-e <expr>|--regex=<expr><br>只输出日志消息与 `` 匹配的行，其中 `` 是一个正则表达式。|
-|-m <count>|--max-count=<count><br>输出 `` 行后退出。这样是为了与 `--regex` 配对，但可以独立运行。|
-|--pid=<pid> ...|仅输出来自给定 PID 的日志。<br>例如：logcat --pid=4355|
-|-D|--dividers<br>输出各个日志缓冲区之间的分隔线。|
-|-t '<time>'|输出自指定时间以来的最新行。此选项包括 `-d` 功能。<br>要了解如何引用带有嵌入空格的参数，请参阅 [-P 选项](https://developer.android.google.cn/studio/command-line/logcat#quotes)。<br>例如：adb logcat -t '01-26 20:52:41.820'|
-|-v <format>|设置日志消息的输出格式。默认格式为 `threadtime`。<br>有关支持的格式列表，请参阅介绍[控制日志输出格式](https://developer.android.google.cn/studio/command-line/logcat#outputFormat)的部分。|
-|-g|输出指定日志缓冲区的大小并退出。|
-|-G <size>|--buffer-size=<size><br> 设置log缓冲区的大小，后缀可以是K或者M<br>例如：logcat -G 2M|
-|-S|--statistics<br>在输出中包含统计信息，以识别和定位日志垃圾信息发送者。(注意，S是大写的)|
-|-c|清空（清除）整个日志并退出。|
-|-t <count>|仅输出最新的行数。此选项包括 `-d` 功能。|
-|-t '<time>'|输出自指定时间以来的最新行。此选项包括 `-d` 功能。<br>要了解如何引用带有嵌入空格的参数，请参阅 [-P 选项](https://developer.android.google.cn/studio/command-line/logcat#quotes)。<br>例如：adb logcat -t '01-26 20:52:41.820'|
-|||
-|||
+|`-s`|相当于过滤器表达式 `'*:S'` <br> 例如：`logcat -s demo`|
+|`-f <file>`|`--file=<file>` <br>设置logcat 内容保存的位置，默认是stdout<br> 例如:  logcat -f sdcard/log.txt|
+|`-r <kbytes>`|`--rotate-kbytes=<kbytes>` <br>每输出 `<kbytes>` 时轮替日志文件，默认是16 <br> 例如：`logcat -f sdcard/log.txt -r 1`|
+|`-b <buffer>`|加载可供查看的备用日志缓冲区，例如 `events` 或 `radio`。<br>默认使用 `main`、`system` 和 `crash` 缓冲区集。<br>请参阅[查看备用日志缓冲区](https://developer.android.google.cn/tools/debugging/debugging-log#alternativeBuffers)|
+|`-c`|`--clear` <br/>清除（清空）所选的缓冲区并退出。<br>默认缓冲区集为 `main`、`system` 和 `crash`。<br>要清除所有缓冲区，请使用 `-b all -c`。|
+|`-e <expr>`|`--regex=<expr>` <br>只输出日志消息与 `` 匹配的行，其中 `` 是一个正则表达式。|
+|`-m <count>`|`--max-count=<count>` <br>输出 `m` 行后退出。这样是为了与 `--regex` 配对，但可以独立运行。|
+|`--pid=<pid> ...`|仅输出来自给定 PID 的日志。<br>例如：`logcat --pid=4355`|
+|`-D`|`--dividers` <br>输出各个日志缓冲区之间的分隔线。|
+|`-t <time>`|输出自指定时间以来的最新行。此选项包括 `-d` 功能。<br>要了解如何引用带有嵌入空格的参数，请参阅 [-P 选项](https://developer.android.google.cn/studio/command-line/logcat#quotes)。<br>例如：`adb logcat -t '01-26 20:52:41.820'`|
+|`-v <format>`|设置日志消息的输出格式。默认格式为 `threadtime`。<br>有关支持的格式列表，请参阅介绍[控制日志输出格式](https://developer.android.google.cn/studio/command-line/logcat#outputFormat)的部分。|
+|`-g`|输出指定日志缓冲区的大小并退出。|
+|`-G <size>`|`--buffer-size=<size>` <br> 设置log缓冲区的大小，后缀可以是K或者M<br>例如：`logcat -G 2M`|
+|`-S`|`--statistics` <br>在输出中包含统计信息，以识别和定位日志垃圾信息发送者。(注意，S是大写的)|
+|`-c`|清空（清除）整个日志并退出。|
+|`-t <count>`|仅输出最新的行数。此选项包括 `-d` 功能。|
+|`-t <time>`|输出自指定时间以来的最新行。此选项包括 `-d` 功能。<br>要了解如何引用带有嵌入空格的参数，请参阅 [-P 选项](https://developer.android.google.cn/studio/command-line/logcat#quotes)。<br>例如：`adb logcat -t '01-26 20:52:41.820'`|
+
 
 ## 2、控制日志输出格式
 
