@@ -5,7 +5,7 @@ description: Aesthetic
 header-img: "img/background/contact-bg.jpg"
 ---
 
-{% for post in paginator.postsart %}
+{% for post in paginator.drafts %}
 <div class="post-preview">
 	<a href="{{ post.url | prepend: site.baseurl }}">
 		<h2 class="post-title">
