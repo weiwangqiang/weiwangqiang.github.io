@@ -23,47 +23,51 @@ adb shell setprop debug.layout true
 
 然后重新启动应用生效
 
+![在这里插入图片描述](/img/blog_android_debug_code/2.png){:height="250" width="250"}
+
+同理，关闭如下
+
+```java
+adb shell setprop debug.layout false
+```
 
 2、打开 Overdraw 检查：
 
 ```java
 
-/**
- * Controls overdraw debugging.
- *
- * Possible values:
- * "false", to disable overdraw debugging
- * "show", to show overdraw areas on screen
- * "count", to display an overdraw counter
- *
- */
- adb shell setprop debug.hwui.overdraw show
+// Controls overdraw debugging.
+// Possible values:
+// "false", to disable overdraw debugging
+// "show", to show overdraw areas on screen
+// "count", to display an overdraw counter
+
+adb shell setprop debug.hwui.overdraw show
  
 ```
+
+![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="250" width="250"}
+
 
 3、查看dirty区域：
 
 ```java
 
-/**
-* Turn on to draw dirty regions every other frame.
-*
-* Possible values:
-* "true", to enable dirty regions debugging
-* "false", to disable dirty regions debugging
-*
-*/
+// Turn on to draw dirty regions every other frame.
+// 
+// Possible values:
+// "true", to enable dirty regions debugging
+// "false", to disable dirty regions debugging
+
 adb shell setprop debug.hwui.show_dirty_regions true
 
-/**
-* System property used to enable or disable dirty regions invalidation.
-* This property is only queried if {@link #RENDER_DIRTY_REGIONS} is true.
-* The default value of this property is assumed to be true.
-*
-* Possible values:
-* "true", to enable partial invalidates
-* "false", to disable partial invalidates
-*/
+// System property used to enable or disable dirty regions invalidation.
+// This property is only queried if {@link #RENDER_DIRTY_REGIONS} is true.
+// The default value of this property is assumed to be true.
+// 
+// Possible values:
+// "true", to enable partial invalidates
+// "false", to disable partial invalidates
+
 adb shell setprop debug.hwui.render_dirty_regions true
 	
 ```
@@ -74,15 +78,13 @@ kill掉然后重启进程即可
 
 ```java
 
-    /**
-     * Turn on to flash hardware layers when they update.
-     *
-     * Possible values:
-     * "true", to enable hardware layers updates debugging
-     * "false", to disable hardware layers updates debugging
-     *
-     */
-	adb shell setprop debug.hwui.show_layers_updates true
+// Turn on to flash hardware layers when they update.
+// 
+// Possible values:
+// "true", to enable hardware layers updates debugging
+// "false", to disable hardware layers updates debugging
+
+adb shell setprop debug.hwui.show_layers_updates true
 	
 ```
 
@@ -94,47 +96,44 @@ adb shell dumpsys gfxinfo
 
 ```
 
-6、
+6、查看GPU 绘制情况
 
 ```java
 
-    /**
-     * System property used to enable or disable hardware rendering profiling.
-     * The default value of this property is assumed to be false.
-     *
-     * When profiling is enabled, the adb shell dumpsys gfxinfo command will
-     * output extra information about the time taken to execute by the last
-     * frames.
-     *
-     * Possible values:
-     * "true", to enable profiling
-     * "visual_bars", to enable profiling and visualize the results on screen
-     * "false", to disable profiling
-     *
-     * @see #PROFILE_PROPERTY_VISUALIZE_BARS
-     *
-     */
-	 adb shell setprop debug.hwui.profile #{value}
+// System property used to enable or disable hardware rendering profiling.
+// The default value of this property is assumed to be false.
+//
+// When profiling is enabled, the adb shell dumpsys gfxinfo command will
+// output extra information about the time taken to execute by the last
+// frames.
+// Possible values:
+// "true", to enable profiling
+// "visual_bars", to enable profiling and visualize the results on screen
+// "false", to disable profiling
+// @see #PROFILE_PROPERTY_VISUALIZE_BARS
+
+adb shell setprop debug.hwui.profile #{value}
 	 
 ```
 
-7、
+![在这里插入图片描述](/img/blog_android_debug_code/1.png){:height="250" width="250"}
+
+7、设置GPU 最大帧数
 
 ```java
 
-    /**
-     * System property used to specify the number of frames to be used
-     * when doing hardware rendering profiling.
-     * The default value of this property is #PROFILE_MAX_FRAMES.
-     *
-     * When profiling is enabled, the adb shell dumpsys gfxinfo command will
-     * output extra information about the time taken to execute by the last
-     * frames.
-     *
-     * Possible values:
-     * "60", to set the limit of frames to 60
-     */
-     adb shell setprop debug.hwui.profile.maxframes #{value}
+// System property used to specify the number of frames to be used
+// when doing hardware rendering profiling.
+// The default value of this property is #PROFILE_MAX_FRAMES.
+// 
+// When profiling is enabled, the adb shell dumpsys gfxinfo command will
+// output extra information about the time taken to execute by the last
+// frames.
+// 
+// Possible values:
+// "60", to set the limit of frames to 60
+
+adb shell setprop debug.hwui.profile.maxframes #{value}
      
 ```
 
@@ -142,16 +141,14 @@ adb shell dumpsys gfxinfo
 
 ```java
 
-    /**
-     * Turn on to debug non-rectangular clip operations.
-     *
-     * Possible values:
-     * "hide", to disable this debug mode
-     * "highlight", highlight drawing commands tested against a non-rectangular clip
-     * "stencil", renders the clip region on screen when set
-     *
-     */
-	  adb shell setprop debug.hwui.show_non_rect_clip #{value}
+// Turn on to debug non-rectangular clip operations.
+// 
+// Possible values:
+// "hide", to disable this debug mode
+// "highlight", highlight drawing commands tested against a non-rectangular clip
+// "stencil", renders the clip region on screen when set
+
+adb shell setprop debug.hwui.show_non_rect_clip #{value}
 	  
 ```
 # 内存相关
@@ -252,7 +249,6 @@ pm dump {packageName} | grep version // 查看apk版本，可以grep其他关键
 
 ```
 
-2、
 # 系统事件
 
 1、 监听按键事件
