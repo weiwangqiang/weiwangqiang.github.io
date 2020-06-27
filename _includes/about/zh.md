@@ -10,8 +10,11 @@ Hey，我是韦王强，小鮮肉一枚，多出没于[博客](https://weiwangqi
 
 一些作品和开源项目，👉 戳 [github](http://github.com/weiwangqiang)
 
-最近迷上摄影，不久的将来会开通相关的topic
-##### Talks
+~~最近迷上摄影，不久的将来会开通相关的topic~~
+
+来还愿啦~,相关[topic](https://weiwangqiang.github.io/arts/)已经开通啦~不定期跟新
+
+##### 最近Talks
 
 - [Android单元测试全解](https://blog.csdn.net/to_perfect/article/details/80738867)
 - [【android】插件化技术原理详解](https://blog.csdn.net/to_perfect/article/details/79510125)
