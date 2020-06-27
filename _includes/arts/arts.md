@@ -1,4 +1,8 @@
-﻿> Beautiful Arts
+﻿---
+layout: post
+---
+
+> Beautiful Arts
 
 ## Beach View
 
