@@ -1,10 +1,4 @@
-﻿---
-layout:     post
-title:      "Arts"
-date:       2020-06-27 23:00:00
-author:     "Weiwq"
----
-
+﻿
 > Beautiful Arts
 
 ## Beach View
