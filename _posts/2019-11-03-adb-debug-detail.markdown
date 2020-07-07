@@ -154,13 +154,23 @@ adb shell am start -a  android.intent.action.VIEW
 | `-f <flags>`                                  | 将标记添加到 `setFlags()` 支持的 intent。                    |
 | `-e  | --es <extra_key> <extra_string_value>` | 将字符串数据作为键值对添加进来。                             |
 | `--ez <extra_key> <extra_boolean_value>`      | 将布尔型数据作为键值对添加进来。                             |
-| `-ei <extra_key> <extra_int_value>`         | 将整型数据作为键值对添加进来。                               |
-| `--el <extra_key> <extra_long_value>`          | 将长整型数据作为键值对添加进来。                             |
+| `-ei <extra_key> <extra_int_value>`           | 将整型数据作为键值对添加进来。                               |
+| `--el <extra_key> <extra_long_value>`         | 将长整型数据作为键值对添加进来。                             |
 | `--ef <extra_key> <extra_float_value>`        | 将浮点型数据作为键值对添加进来。                             |
-| `--eu <extra_key> <extra_uri_value>`        | 将 URI 数据作为键值对添加进来。                              |
-| --activity-single-top                         | 包含标记 `FLAG_ACTIVITY_SINGLE_TOP`。                        |
-| --activity-clear-task                         | 包含标记 `FLAG_ACTIVITY_CLEAR_TASK`。                        |
-| URI component package                         | 如果不受上述某一选项的限制，您可以直接指定 URI 或软件包名称 或者组件名称。当某个参数不受限制时，如果该参数包含一个“:”（冒号），则该工具会假定参数是一个 URI；如果该参数包含一个“/”（正斜线），则该工具会假定参数是一个组件名称；如果并非这两种情况，则该工具会假定参数是一个软件包名称。 |
+| `--ecn <extra_key> <component_name_value>`    | 添加组件名称，将其作为 `ComponentName` 对象进行转换和传递。  |
+| `--eia <EXTRA_KEY> <INT1,INT2...>`            | 添加int[] 数组。例如：`--eia key 1,2,3`                      |
+| `--eial <EXTRA_KEY> <INT1,INT2...>`           | 添加List<Integer>。例如：`--eia key 1,2,3`                   |
+| `--ela <EXTRA_KEY> <LONG1,LONG2...>`          | 添加long类型数组。                                           |
+| `--elal <EXTRA_KEY> <LONG1,LONG2...>`         | 添加long类型List。                                           |
+| `--efa <EXTRA_KEY> <FLOAT1,FLOAT2..>`         | 添加float数组。                                              |
+| `--efal <EXTRA_KEY> <FLOAT1,FLOAT2..>`        | 添加float list。                                             |
+| `--esa <EXTRA_KEY> <STRING1,STRING2...>`      | 添加string 数组，例如：`--esa key string1,string2`           |
+| `--esal <EXTRA_KEY> <STRING1,STRING2...>`     | 添加string  list，例如：`--esa key string1,string2`          |
+| `--eu <extra_key> <extra_uri_value>`          | 将 URI 数据作为键值对添加进来。                              |
+| `URI component package`                       | 如果不受上述某一选项的限制，您可以直接指定 URI 或软件包名称 或者组件名称。当某个参数不受限制时，如果该参数包含一个“:”（冒号），则该工具会假定参数是一个 URI；如果该参数包含一个“/”（正斜线），则该工具会假定参数是一个组件名称；如果并非这两种情况，则该工具会假定参数是一个软件包名称。 |
+| `--activity-clear-task`                       | 包含标记 `FLAG_ACTIVITY_CLEAR_TASK`。                        |
+| `--activity-single-top`                       | 包含标记 `FLAG_ACTIVITY_SINGLE_TOP`。                        |
+|                                               |                                                              |
 
 **am的命令如下**
 
