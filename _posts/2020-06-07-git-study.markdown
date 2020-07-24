@@ -214,7 +214,8 @@ $ git remote remove origin1
 
 ```java
 
-$ git branch // 查看本地所有分支
+$ git branch // 查看本地仓库所有分支
+$ git branch --remote //. 查看远程仓库所有分支  
 $ git checkout -b new_branch // 创建新的分支，并切到该分支上
 $ git branch -d new_branch // 删除new_branch 分支
 $ git checkout new_branch  // 切换到new_branch 分支
@@ -873,5 +874,5 @@ $ git config --global core.autocrlf false
 
 
 
-——Weiwq 后记于 2020.06 广州
+——Weiwq 后记于 2020.07 广州
 
