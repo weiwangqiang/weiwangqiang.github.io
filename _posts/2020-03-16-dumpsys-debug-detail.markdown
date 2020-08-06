@@ -475,6 +475,36 @@ WINDOW MANAGER LAST ANR (dumpsys window lastanr)
 - **dumpsys window p**
 
   获取当前采用的政策状态，比如获取焦点的window、app
+  
+### 13、Historical broadcasts
+
+`dumpsys | grep BroadcastRecord` 可以查看历史广播记录
+
+```java
+
+$ dumpsys | grep BroadcastRecord
+    BroadcastRecord{548731 u-1 android.intent.action.TIME_TICK} to user -1
+    BroadcastRecord{7bf674a u-1 android.intent.action.TIME_TICK} to user -1
+  ......
+  
+```
+
+比如Wi-Fi的广播记录会有如下信息：BroadcastRecord（广播的intent，参数），caller(谁发的广播)，对应的进程号，ordered（是否有序广播）等
+
+```java
+
+Historical Broadcast background #3:
+    BroadcastRecord{4c46ab u-1 android.net.wifi.RSSI_CHANGED} to user -1
+    Intent { act=android.net.wifi.RSSI_CHANGED flg=0x4000010 (has extras) }
+      extras: Bundle[{newRssi=-56}]
+    caller=android 1933:system/1000 pid=1933 uid=1000
+    enqueueClockTime=۲۰۲۲-۰۳-۱۹ ۰۷:۴۹:۳۰ dispatchClockTime=۲۰۲۲-۰۳-۱۹ ۰۷:۴۹:۳۰
+    dispatchTime=-2m19s724ms (+1ms since enq) finishTime=-2m19s724ms (0 since disp)
+    resultAbort=false ordered=false sticky=true initialSticky=false
+    Deliver #0: BroadcastFilter{4239f13 u0 ReceiverList{46da02 2647 com.ecloud.eshare.server/1000/u0 remote:9fd7f4d}}
+
+```
+
 
 ### 后记
 
