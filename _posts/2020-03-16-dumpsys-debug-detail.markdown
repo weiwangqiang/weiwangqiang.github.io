@@ -217,6 +217,31 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
   打印对应的启动者
 
+  
+  
+  ```java
+  mStartActivity:
+        packageName=com.demo.Activity processName=com.demo
+        launchedFromUid=10043 launchedFromPackage=com.demo.OtherActivity userId=0
+  ```
+
+- **dumpsys activity activities**
+
+  该命令也能获取到activity是被哪个应用启动的，activity所处的生命周期状态
+
+  
+
+  ```java
+  * Hist #0: ActivityRecord{3fc59bd u0 com.demo/com.demo.Activity t9}
+            packageName=com.demo processName=com.demo.activity
+            launchedFromUid=10043 launchedFromPackage=com.demo.OtherActivity userId=0
+             ...
+             state=RESUMED stopped=false delayedResume=false finishing=false
+              
+  ```
+
+  
+
 - **dumpsys activity lastanr**
 
   打印 ANR list信息
@@ -476,6 +501,11 @@ WINDOW MANAGER LAST ANR (dumpsys window lastanr)
 
   获取当前采用的政策状态，比如获取焦点的window、app
   
+- **dumpsys window | grep mCurr**
+  
+  获取当前焦点的activity
+  
+
 ### 13、Historical broadcasts
 
 `dumpsys | grep BroadcastRecord` 可以查看历史广播记录
