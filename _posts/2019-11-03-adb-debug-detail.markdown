@@ -216,6 +216,16 @@ generic_x86:/ # pm uninstall com.example.MyApp //卸载apk
 
 ```
 
+获取已经安装的apk列表
+
+```java
+generic_x86_64:/ $ pm -l
+package:com.android.cts.priv.ctsshim
+package:com.google.android.youtube
+  ......
+
+```
+
 pm详细命令如下：
 
 | 命令                                     | 说明                                                         |
