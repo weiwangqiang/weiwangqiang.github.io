@@ -51,9 +51,11 @@ $ git stash clear // 将stash list 清空
 
 但是如果我们需要指定的commit信息怎么办呢？
 
-## 2、git log 命令
+## 2、git log 常用命令
 
-### 基本命令
+### 2.1、log命令
+
+#### 基本命令
 
 ```java
 
@@ -68,7 +70,7 @@ $ git log refA refB --not refC  // 所有被 refA 或 refB 包含的但是不被
       
 ```
 
-### **参数：--pretty**
+#### **参数：--pretty**
 
 - **oneline：将commit在一列显示**
 
@@ -112,7 +114,7 @@ a11bef0 - Scott Chacon, 6 years ago : first commit
 
 另外还有short`，`full` 和 `fuller，这里就不一一列举
 
-### **参数：--follow **
+#### **参数：--follow **
 
 获取指定文件的修改历史，例如结合pretty 参数，打印xxx.java 文件的提交历史
 
@@ -124,7 +126,7 @@ $  git log --pretty=format:"%cd %an %s"  --follow app/src/main/java/com/xxx.java
   
 ```
 
-### **参数：-S**
+#### **参数：-S**
 
 获取指定字符串的修改记录，例如：
 
@@ -134,7 +136,7 @@ $ git log -S function_name --follow  app/src/main/java/com/xxxx.java // 在文�
 
 ```
 
-### 参数：--decorate
+#### 参数：--decorate
 
 查看各分支所指的对象（TAG之间的commit）
 
@@ -156,7 +158,7 @@ $ git log --oneline --decorate --graph --all
 * f30ab add feature #32 - ability to add new formats to the
 ```
 
-### **其他参数**
+#### **其他参数**
 
 | 参数                  | 说明                                                         |
 | --------------------- | ------------------------------------------------------------ |
@@ -167,6 +169,32 @@ $ git log --oneline --decorate --graph --all
 | `--committer`         | 仅显示提交者匹配指定字符串的提交。如: git log  --committer='demo' |
 | `--grep`              | 仅显示提交说明中包含指定字符串的提交。如：git log --grep 'fix' |
 | --no-merges           | 去掉合并提交，如：git log --no-merges                        |
+
+### 2.2、show 命令
+
+show参数主用用于查看指定commit的信息，常常与log命令搭配使用，比如查看指定commit详细修改
+
+```java
+
+$ git show 98a0092e4c9a0329465b6ac113c2ddf04eb0695c
+
+```
+
+或者查看该commit 修改了哪些文件
+
+```java
+
+$ git show 98a0092e4c9a0329465b6ac113c2ddf04eb0695c --name-only
+
+```
+
+可以查看该commit下指定文件的修改，比如查看Activity.java的修改内容：
+
+```java
+
+$ git show 98a0092e4c9a0329465b6ac113c2ddf04eb0695c Activity.java
+
+```
 
 
 
