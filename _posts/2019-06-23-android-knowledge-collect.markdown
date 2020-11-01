@@ -84,9 +84,11 @@ adb shell dumpsys SurfaceFlinger
 - **[美团：Litho的基本使用](https://tech.meituan.com/2019/03/14/litho-use-and-principle-analysis.html)**
 
 
-# 4、系统源码
+## 4、系统源码
 
 - **[深入Android源码系列（一）](https://mp.weixin.qq.com/s/VSVUbaEIfrmFZMB1k49fyA)**
+- [写给 Android 应用工程师的 Binder 原理剖析](https://zhuanlan.zhihu.com/p/35519585)
+- [你逃不掉的APK安装原理](https://www.jianshu.com/p/d2a550a953e0)
 
 
 # 二、数据库
@@ -131,7 +133,7 @@ adb shell dumpsys SurfaceFlinger
 - **[FileVisitor:文件遍历](https://developer.android.com/reference/java/nio/file/FileVisitor)**
 
 
-## 三、编译
+# 三、编译
 
 - **[字节码操纵技术探秘](https://www.infoq.cn/article/Living-Matrix-Bytecode-Manipulation)**
 - **[ASM-操纵Java字节码的框架](https://asm.ow2.io/)**
@@ -143,7 +145,7 @@ adb shell dumpsys SurfaceFlinger
 - [51 信用卡 Android 自动埋点实践](https://mp.weixin.qq.com/s/P95ATtgT2pgx4bSLCAzi3Q)
 - [JVM文档](https://docs.oracle.com/javase/specs/jvms/se11/html/index.html)
 - [aspectj   java 编程扩展框架](https://time.geekbang.org/column/article/82761)
-- [](https://github.com/HujiangTechnology/gradle_plugin_android_aspectjx)
+- [aspectjx](https://github.com/HujiangTechnology/gradle_plugin_android_aspectjx)
 
 # 后记
 
