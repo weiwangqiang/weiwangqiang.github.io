@@ -23,7 +23,7 @@ tags:
 
 话不多说，我们先直接上对比结果，对比方案就是上面提到的Android-SpinKit 框架。这里笔者画了一个类似的动画。
 
-<img src="/Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/surface_1.gif" width="50%" height="40%">  ![在这里插入图片描述]( /Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/DoubleBounce.gif)
+<img src="/img/blog_surface_animator_height_profile/surface_1.gif" width="50%" height="40%">  ![在这里插入图片描述](/img/blog_surface_animator_height_profile/DoubleBounce.gif)
 
 ## CPU对比
 
@@ -31,11 +31,11 @@ tags:
 
 其中com.demo.surfaceanimator 进程为笔者写的demo，可以看出，稳定在21%（单核）左右
 
-![在这里插入图片描述]( /Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/surface_2.png)
+![在这里插入图片描述](/img/blog_surface_animator_height_profile/surface_2.png)
 
 而进程 com.github.ybq.android.spinkit （为Android-SpinKit 项目），其稳定在43%左右
 
-![在这里插入图片描述]( /Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/compare_2.png)
+![在这里插入图片描述](/img/blog_surface_animator_height_profile/compare_2.png)
 
 
 
@@ -43,7 +43,7 @@ tags:
 
 由于GPU的渲染柱状图不支持surfaceview，这里只截取了Android-SpinKit 项目的渲染图，可以看出SpinKit还是很优秀的。
 
-<img src="/Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/compare_3.png" width="30%" height="30%">
+<img src="/img/blog_surface_animator_height_profile/compare_3.png" width="30%" height="30%">
 
 ## profile对比
 
@@ -51,11 +51,11 @@ tags:
 
 下图是笔者的demo性能
 
-<img src="/Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/surface_4.png" width="100%" height="30%">
+<img src="/img/blog_surface_animator_height_profile/surface_4.png" width="100%" height="30%">
 
 这个是SpinKit 项目的结果
 
-<img src="/Users/wei/blog/weiwangqiang.github.io/img/blog_surface_animator_height_profile/compare_4.png" width="100%" height="30%">
+<img src="/img/blog_surface_animator_height_profile/compare_4.png" width="100%" height="30%">
 
 从上面可以看出，内存占用差不多（空apk的内存占用也很高）cpu占比基本差一倍。
 
@@ -153,6 +153,11 @@ public class SurfaceAnimatorView extends SurfaceView implements SurfaceHolder.Ca
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         isStop = true;
+        try {
+            mRenderThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 
@@ -230,7 +235,10 @@ public class CircleLoadingAnimator implements IAnimator {
 
 ````
 
-# 3、surfaceView原理
+# 3、小结
+
+​         在SurfaceView里面，可以通过控制帧率的方式控制cpu的消耗，通过测试，帧率控制在30到40之间，就能提高近50%的性能，又能尽可能保证用户体验，在性能比较差的平台上还是很有优势的。关于surfaceView的原理，其他博客已经有比较详细的介绍，这里就不做展开了。
 
 
 
+——Weiwq  于 2020.12 广州
