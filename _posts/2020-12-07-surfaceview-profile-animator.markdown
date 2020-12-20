@@ -2,9 +2,9 @@
 layout:     post
 title:      "教你用SurfaceView画高性能的动画"
 subtitle:   " \"妈妈再也不用担心动画卡顿了\""
-date:       2020-08-20 22:30:00
+date:       2020-12-07 12:30:00
 author:     "Weiwq"
-header-img: "img/background/post-bg-re-vs-ng2.jpg"
+header-img: "img/background/post-bg-alitrip.jpg"
 catalog: true
 tags:
     - Android
