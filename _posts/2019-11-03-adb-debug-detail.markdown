@@ -347,7 +347,7 @@ adb shell ls ls system/bin
 | :------------------------------------ | :------------------------------------------------------------ |
 | dumpsys                              | 将系统数据转储到屏幕。要详细了解此命令行工具，请阅读 [dumpsys](https://developer.android.com/studio/command-line/dumpsys.html?hl=zh-cn) |
 | dumpstate                            | 将状态转储到文件。                                           |
-| logcat [option]...  [filter-spec]... | 启用系统和应用日志记录，并将输出显示到屏幕上。另请参阅 [Logcat 命令行工具](https://developer.android.com/studio/command-line/logcat.html?hl=zh-cn)。 |
+| logcat [option]...  [filter-spec]... | 启用系统和应用日志记录，并将输出显示到屏幕上。另请参阅 [android调试——logcat详解](https://weiwangqiang.github.io/2020/04/14/debug-logcat/)。 |
 | dmesg                                | 将内核调试消息输出到屏幕。                                   |
 | start                                | 启动（重启）设备。                                           |
 | stop                                 | 停止执行设备。                                               |
