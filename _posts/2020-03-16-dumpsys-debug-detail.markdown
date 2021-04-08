@@ -116,7 +116,7 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 - **dumpsys activity a**
 
-  从顶部到底部打印 TaskRecord（activity） 信息，包含如下内容
+  从顶部到底部打印 TaskRecord（activity） 信息，包含：当前生命周期、包、className、被谁启动的、进程名、intent、启动模式等
 
   ```java
   * TaskRecord{9e6567 #150 A=com.android.settings U=0 StackId=1 sz=2}
@@ -131,6 +131,35 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
             baseDir=/system/priv-app/Settings/Settings.apk
             dataDir=/data/user_de/0/com.android.settings
             state=RESUMED stopped=false delayedResume=false finishing=false
+            fullscreen=true noDisplay=false immersive=false launchMode=2
+  ```
+  - 启动模式
+
+  需要注意的是，这里的启动模式是数字，并不是我们manifest中配置的那样。这里列一下对应的实际状态，即2对应的是singleTask
+
+  ```java
+    public class ActivityInfo extends ComponentInfo implements Parcelable {
+      /**
+       * Constant corresponding to <code>standard</code> in
+       * the {@link android.R.attr#launchMode} attribute.
+       */
+      public static final int LAUNCH_MULTIPLE = 0;
+      /**
+       * Constant corresponding to <code>singleTop</code> in
+       * the {@link android.R.attr#launchMode} attribute.
+       */
+      public static final int LAUNCH_SINGLE_TOP = 1;
+      /**
+       * Constant corresponding to <code>singleTask</code> in
+       * the {@link android.R.attr#launchMode} attribute.
+       */
+      public static final int LAUNCH_SINGLE_TASK = 2;
+      /**
+       * Constant corresponding to <code>singleInstance</code> in
+       * the {@link android.R.attr#launchMode} attribute.
+       */
+      public static final int LAUNCH_SINGLE_INSTANCE = 3;
+    }
   ```
 
 - **dumpsys activity r**
