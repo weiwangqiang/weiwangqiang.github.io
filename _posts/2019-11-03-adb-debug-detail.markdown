@@ -235,7 +235,7 @@ pm详细命令如下：
 | list permissions [**options**] `<group>` | 输出所有已知的权限，或者，仅输出 `group` 中的权限。<br>具体options选项：<br>`-g`：按组进行整理。<br>`-f`：输出所有信息。<br>`-s`：简短摘要。<br>`-d`：仅列出危险权限。<br>`-u`：仅列出用户将看到的权限。<br>示例：<br>`pm list permissions -d` // 列举危险权限 |
 | list features                            | 列举系统所有功能                                             |
 | list libraries                           | 输出当前设备支持的所有库。                                   |
-| path `<package>`                     | 输出指定 `package` 的 APK 的路径。<br>示例：<br>pm path com.demo.mydemo |
+| path `<package>`                     | 输出指定 `package`  APK的安装路径。<br>示例：<br>pm path com.demo.mydemo |
 | install [**options**] `<apkPath>`   | 将软件包（通过 `path` 指定）安装到系统。<br>具体options选项参考`adb install`命令 |
 | uninstall [**options**] `<package>`  | 从系统中移除软件包。具体选项：<br>`-k`：移除软件包后保留数据和缓存目录。 |
 | clear `<package>`                    | 删除与软件包关联的所有数据。                                 |
@@ -244,7 +244,7 @@ pm详细命令如下：
 | grant `<package_name>` `<permission>` | 向应用授予权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | revoke `<package_name>` **permission** | 从应用中撤消权限。在搭载 Android 6.0（API 级别 23）及更高版本的设备上，该权限可以是应用清单中声明的任何权限。在搭载 Android 5.1（API 级别 22）及更低版本的设备上，该权限必须是应用定义的可选权限。 |
 | trim-caches `<desired_free_space>`   | 减少缓存文件以达到指定的可用空间。                           |
-|dump `<PACKAGE>`|打印与指定包名相关的应用信息|
+|dump `<PACKAGE>`|打印与指定包名相关的应用信息<br>比如查看`com.demo.apk` 应用的版本号：`pm dump com.demo.apk | grep version`|
 |resolve-activity [--brief] [--components] [--user USER_ID] `<INTENT>`|通过指定的INTENT 打印对应的activity信息|
 |query-activities [--brief] [--components] [--user USER_ID] `<INTENT>`|打印所有能处理INTENT 的activities信息|
 |query-services [--brief] [--components] [--user USER_ID] `<INTENT>`|打印所有能处理INTENT 的service信息|
