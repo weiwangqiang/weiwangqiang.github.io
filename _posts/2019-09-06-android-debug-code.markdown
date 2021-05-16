@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "android好伴侣"
-subtitle:   " \"Android调试，你需要知道的命令\""
+title:      "App性能调试详解"
+subtitle:   " \"Android 应用调试，你必须要知道的命令\""
 date:       2019-06-23 16:10:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
@@ -13,7 +13,7 @@ tags:
 > “android提供了一些命令方便我们调试，这里特意整理了相关指令“
 
 
-# UI相关
+# UI 分析
 
 1、开启视图边界
 
@@ -151,7 +151,7 @@ adb shell setprop debug.hwui.profile.maxframes #{value}
 adb shell setprop debug.hwui.show_non_rect_clip #{value}
 	  
 ```
-# 内存相关
+# 内存分析
 
 
 1、dump内存信息分析：
@@ -191,30 +191,14 @@ adb shell top -m 5
 
 ```
 
-5、在代码里面，给应用打trace，获取对应的火焰图
-
-```java
-
-// 设置开始记录方法调用情况
-// param1:保存文件的路径
-// param2: 文件最大容量，单位是byte
-Debug.startMethodTracing("/storage/sda1/debug.trace", 50 << 20);
-
-// 结束记录方法调用情况
-Debug.stopMethodTracing();
-
-```
-
-用Android。studio打开debug.trace文件即可
-
-6、获取cup信息
+5、获取cup信息
 
 ```java
 
 adb shell cat /proc/cpuinfo
 
 ```
-7、查看input设备信息
+6、查看input设备信息
 
 ```java
 
@@ -222,7 +206,7 @@ adb shell cat /proc/bus/input/devices
 
 ```
 
-8、查看ip，mac信息
+7、查看ip，mac信息
 
 ```java
 
@@ -230,7 +214,7 @@ adb shell netcfg
 
 ```
 
-9、获取当前activity信息
+8、获取当前activity信息
 
 ```java
 
@@ -238,18 +222,25 @@ adb shell dumpsys window | grep mCurrentFocus
 
 ```
 
-# pm
+# 应用耗时分析
 
-1、查看apk信息
+1、在代码里面，给应用打trace，获取对应的火焰图
 
 ```java
 
-pm list packages -f | grep {package关键字} // 查看apk安装路径
-pm dump {packageName} | grep version // 查看apk版本，可以grep其他关键词
+// 设置开始记录方法调用情况·1
+// param1:保存文件的路径
+// param2: 文件最大容量，单位是byte
+Debug.startMethodTracing("/stora·1ge/sda1/debug.trace", 50 << 20);
+
+// 结束记录方法调用情况
+Debug.stopMethodTracing();
 
 ```
 
-# 系统事件
+用Android   studio打开debug.trace文件即可
+
+# 系统事件分析
 
 1、 监听按键事件
 
@@ -266,13 +257,7 @@ logcat -s AndroidRuntime
 logcat -s ActivityManager,AndroidRuntime,System.err
 
 ```
-3、在串口下，关闭内核打印
 
-```java
-
-echo 0 0 0 0 > /proc/sys/kernel/printk
-
-```
 # gradle编译
 
 在项目目录下输入如下，即可在output目录下获取对应的apk包：

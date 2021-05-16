@@ -112,9 +112,9 @@ public class ActivityInfo extends ComponentInfo implements Parcelable {
 
 ###  使用dumpsys  命令查看任务栈
 
-我们先来看看在launch下，任务栈的情况
+我们先来看看在launcher下，任务栈的情况
 
-在cmd下运行 ` adb shell dumpsys activity a` 可以得到如下信息
+在cmd下运行 `adb shell dumpsys activity a`可以得到如下信息
 
 ```cmd
 ACTIVITY MANAGER ACTIVITIES (dumpsys activity activities)
@@ -708,7 +708,7 @@ SingleInstanceActivity 的 taskId会变
 
 可以发现，SingleInstanceActivity也是放在新的ActivityStack中，并且affinity是我们指定的，其他并无差异。
 
-## 4）intent设置FLAG_ACTIVITY_NEW_TASK 、配置taskAffinity
+### 4）intent设置FLAG_ACTIVITY_NEW_TASK 、配置taskAffinity
 
 同样的，这种方式与3）的效果是一致的。
 
@@ -856,6 +856,7 @@ MainActivity 的任务栈
 **画重点**
 
 - onNewIntent 方法中传入的intent是新启动Activity的intent，与getIntent() 方法返回的intent不是同一个intent
+- 在Activity中，可以通过getTaskId()方法获取到TaskId
 - SingleInstance在Android 6.0与Android9.0的实现方式不一样（应该是从Android7开始就不一样了），但是概念是一样的
 
 
