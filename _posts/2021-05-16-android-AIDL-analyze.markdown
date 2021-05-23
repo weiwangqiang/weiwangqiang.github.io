@@ -443,7 +443,13 @@ static int int_register_android_os_Binder(JNIEnv* env)
 
 至此，server端的onTransact 调用链路就明了了，client端并不是直接调用Stub的onTransact方法，而是通过了Binder驱动，间接调用。
 
-## 四、client端捕获异常
+## 四、类图
+
+Stub、proxy对应的类图如下
+
+<img src="/img/blog_aidl_analyze/5.jpg" width="100%" height="40%"> 
+
+## 五、client端捕获异常
 
 在处理参数的时候，读者有发现没有，无论是client端还是Server端，都会异常信息，这个是做什么用的？
 
@@ -510,13 +516,8 @@ static int int_register_android_os_Binder(JNIEnv* env)
 
 ```java
 public final class Parcel {
-      /**
-         * Special function for writing information at the front of the Parcel
-         * indicating that no exception occurred.
-         *
-         * @see #writeException
-         * @see #readException
-         */
+         //  Special function for writing information at the front of the Parcel
+         // indicating that no exception occurred.
         public final void writeNoException() {
            .....
         }
@@ -526,15 +527,14 @@ public final class Parcel {
 在Parcel 类里面还找到一个类似方法 `writeException`，看起来是写入异常的接口，并且支持SecurityException，BadParcelableException，IllegalArgumentException等异常。
 
 ```java
-   /** 用于将异常结果写入包裹的标头，以便在从事务返回异常时使用  
-     * Special function for writing an exception result at the header of
-     * a parcel, to be used when returning an exception from a transaction.
-     * Note that this currently only supports a few exception types; any other
-     * exception will be re-thrown by this function as a RuntimeException
-     * (to be caught by the system's last-resort exception handling when
-     * dispatching a transaction).
-     * 
-     */
+   // 用于将异常结果写入包裹的标头，以便在从事务返回异常时使用  
+   //  Special function for writing an exception result at the header of
+   // a parcel, to be used when returning an exception from a transaction.
+   // Note that this currently only supports a few exception types; any other
+   // exception will be re-thrown by this function as a RuntimeException
+   // (to be caught by the system's last-resort exception handling when
+   // dispatching a transaction).
+
 public final void writeException(Exception e) {
         int code = 0;
         if (e instanceof Parcelable
@@ -610,12 +610,12 @@ public final void writeException(Exception e) {
 
 ```java
 public final class Parcel {
-       /** 特殊功能，用于从包裹的标头读取异常结果，在接收到事务处理结果后使用。如果已将异常写入到包裹中，则会为您抛出异常，否则返回该异常，并让您从包裹中读取正常结果数据。
-         * Special function for reading an exception result from the header of
-         * a parcel, to be used after receiving the result of a transaction.  This
-         * will throw the exception for you if it had been written to the Parcel,
-         * otherwise return and let you read the normal result data from the Parcel.
-         */
+       // 特殊功能，用于从包裹的标头读取异常结果，在接收到事务处理结果后使用。如果已将异常写入到包裹中，
+       // 则会为您抛出异常，否则返回该异常，并让您从包裹中读取正常结果数据。
+       // Special function for reading an exception result from the header of
+       // a parcel, to be used after receiving the result of a transaction.  This
+       // will throw the exception for you if it had been written to the Parcel,
+       // otherwise return and let you read the normal result data from the Parcel.
         public final void readException() {
             int code = readExceptionCode();
             if (code != 0) {
@@ -665,6 +665,20 @@ public final class Parcel {
 这回client端能捕获异常信息了，并且Server 端无任何异常打印
 
 <img src="/img/blog_aidl_analyze/4.png" width="100%" height="40%">
+
+## 六、总结
+
+- **方法调用**
+ > server 端是通过预先定义好的方法下标（下标范围值是1到0x00FFFFFF），来判断client端是调用哪个方法。因此，server端与Clint端的AIDL接口方法的顺序必须要一致（方法名可以不一样），否则就会出错。
+
+- **AIDL接口生成的Java文件结构**
+> AIDL 接口生成的Java文件主要由两个类：Stub和Proxy。 
+>  Stub：是public的，用于暴露AIDL 定义的方法、用Binder实现通信、Binder的接口转换。
+>  proxy：是Stub 的内部类，主要是实现传参、调用Stub的通信接口、获取返回值。
+> 在client端调用的实际是Proxy对象。
+
+- **异常捕获**
+> AIDL架构支持Clint端捕获server端的异常，server端无效特殊处理，但支持的异常有限（只支持SecurityException，BadParcelableException，IllegalArgumentException等），不支持直接的RunTimeException异常。
 
 ## 后记
 
