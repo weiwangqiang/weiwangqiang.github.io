@@ -596,7 +596,7 @@ taskId终于变了。这是为什么呢？
 
 我们先看在Android 6.0上，在A以singleInstance 方式启动B的任务栈，即创建新的Task
 
-<img src="/img/blog_android_launchmode/7.jpg" width="100%" height="40%">
+<img src="/img/blog_android_launchmode/7.webp" width="100%" height="40%">
 
 Android 9上，在A以singleInstance 方式启动B的任务栈，可见在Android 9 上是直接创建了一个新的Stack和Task。
 
