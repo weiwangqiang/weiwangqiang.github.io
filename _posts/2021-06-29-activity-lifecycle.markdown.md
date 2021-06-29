@@ -1,12 +1,12 @@
+---
 layout:     post
 title:      "framework之Activity 生命周期解析（基于Android11源码）"
 subtitle:   " \"activity的生命周期，是如此朴实无华\""
-date:       2021-06-27 15:08:00
+date:       2021-06-29 22:08:00
 author:     "Weiwq"
-header-img: "img/background/post-bg-nextgen-web-pwa.jpg"
+header-img: "img/background/post-bg-android-1.jpg"
 catalog:  true
 tags:
-
     - Android
 
 ---
@@ -15,7 +15,7 @@ tags:
 
 ## 引言
 
-上一篇讲了activity的创建过程（没看过的小伙伴移步<font color="red"> [点我前往](https://weiwangqiang.github.io/2021/06/08/start-activity-flow/)</font>），那这一篇就讲讲activity的生命周期。
+上一篇讲了activity的创建过程（没看过的小伙伴移步 [<font color="red">点我前往</font>](https://weiwangqiang.github.io/2021/06/08/start-activity-flow/)），那这一篇就讲讲activity的生命周期。
 
 在高版本上，activity的周期都是以事务的方式调用，activityThread里面H类的`EXECUTE_TRANSACTION` 消息正是接收、处理事务的入口，实际最终由TransactionExecutor 处理该事务。（PS：ATMS即ActivityTaskManagerService的简写）
 
@@ -55,13 +55,13 @@ public final class ActivityThread extends ClientTransactionHandler {
 
 [framework之Activity启动流程](https://weiwangqiang.github.io/2021/06/08/start-activity-flow/)，里面已经很详细描述了onCreate的调用流程，对应的流程如下
 
-<img src="D:\myBlog\weiwangqiang.github.io\img/blog_start_activity_flow/activityThread.png" width="100%" height="40%">
+<img src="/img/blog_start_activity_flow/activityThread.png" width="100%" height="40%">
 
 简单来讲，通过LaunchActivityItem调用了ActivityThread的handleLaunchActivity方法，ActivityThread在创建activity实例后，会设置config、window、resource、theme相关资源，在调用activity的attach方法后，会接着调用onCreate方法。
 
 ## 2、onStart
 
-onCreate之后，onStart又是如何调用的呢？这里我们回顾一下onCreate的调用：TransactionExecutor#execute
+onCreate之后，onStart又是如何调用的呢？这里我们回顾一下TransactionExecutor#execute方法
 
 ```java
 // 以正确顺序管理事务执行的类。
@@ -72,13 +72,12 @@ public class TransactionExecutor {
         ....
         // 该方法中通过遍历 transaction#callbacks 获取到LaunchActivityItem，然后调用onCreate方法
         executeCallbacks(transaction);
-        // 这个？
         executeLifecycleState(transaction);
     }
 }
 ```
 
-不知读者发现没有，executeLifecycleState方法还没分析过，很好，续杯！接着看
+不知读者发现没有，executeLifecycleState方法还没分析过，很好，续杯 executeLifecycleState！
 
 ```java
 
@@ -177,7 +176,7 @@ public abstract class ActivityLifecycleItem extends ClientTransactionItem {
 
 通过debug发现，path的size是1，mValues的第一个值是2，即state为2，显然走到ON_START case，调用mTransactionHandler#handleStartActivity方法。
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/1.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/1.png" width="100%" height="40%">
 
 ClientTransactionHandler其实是一个抽象类，ActivityThread才是具体实现类
 
@@ -243,7 +242,6 @@ public class Activity extends ContextThemeWrapper .... {
         // 将周期分发给fragment
         mFragments.dispatchStart();
         ...
-        
         // 将onSart周期结束事件分发给监听器ActivityLifecycleCallbacks
         dispatchActivityPostStarted();
     }
@@ -263,11 +261,11 @@ public class Instrumentation {
 
 ### onRestart
 
-至于onRestart周期，这里也贴一下对应的path
+至于onRestart周期，这里也贴一下对应的path值
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/6.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/6.png" width="100%" height="40%">
 
-其实就是在onStart的前面插入了onStart 下标值，调用的是performRestartActivity方法
+其实就是在onStart的前面插入了onStart 下标值，对应的case调用的是performRestartActivity方法
 
 ```java
 public final class ActivityThread extends ClientTransactionHandler {
@@ -285,7 +283,7 @@ public final class ActivityThread extends ClientTransactionHandler {
 }
 ```
 
-对应的是
+Activity对应的方法是
 
 ```java
 public class Activity extends ContextThemeWrapper .... {
@@ -326,7 +324,7 @@ public class TransactionExecutor {
 
 而ActivityLifecycleItem是一个抽象类，那就再次debug看看lifecycleItem是哪个具体类吧
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/2.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/2.png" width="100%" height="40%">
 
 lifecycleItem是ResumeActivityItem的实例。
 
@@ -409,7 +407,7 @@ public class Activity extends ContextThemeWrapper .... {
 
 ## 4、中场小结
 
-经过上面的分析，想必大家对activity周期调用链路有了一定的了解（绕晕了 doge），其中最重要的地方是下面这里
+经过上面的分析，想必大家对activity周期调用链路有了一定的了解（绕晕了 doge），其中最重要的地方是这里
 
 ```java
 public class TransactionExecutor {
@@ -445,6 +443,7 @@ public class ClientTransaction implements Parcelable, ObjectPoolItem {
     private List<ClientTransactionItem> mActivityCallbacks;
     // 执行事务后客户端活动应处于的最终生命周期状态。
     private ActivityLifecycleItem mLifecycleStateRequest;
+    ....
 }
 ```
 
@@ -501,13 +500,13 @@ public abstract class ActivityLifecycleItem extends ClientTransactionItem {
 
 我们看看ActivityLifecycleItem的子类，会发现有一些关键的周期实现
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/3.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/3.png" width="100%" height="40%">
 
 结合上面ResumeActivityItem的实现，可以看出ActivityLifecycleItem的子类是负责client端**`最终周期`**调用和周期上报。这里提出到的**`最终周期`** 以及 executeLifecycleState 方法也备注了**`最终周期`**，是什么意思呢？
 
-我们都知道activity在创建的时候，会一口气走完onCreate、onstart、onResume方法（不知道的看上面周期分析！！！！）。但是在退出的时候就显得有点小气了，先走onPause、过了一会才走onStop、onDestory。这里的onResume、onPause、onDestory就是最终周期，ATMS在发周期事务的时候，就是直接发这些状态。至于中间的周期，比如onCreate、onStart就会插在这个事务的过程中调用。
+我们都知道activity在创建的时候，会一口气走完onCreate、onstart、onResume方法（不知道的看上面周期分析！！！！）。但是在退出的时候就显得有点小气了，先走onPause、过了一会才走onStop、onDestory。这里的onResume、onPause、onDestory就是最终周期，ATMS在发周期事务的时候，就是直接发这些状态(即mLifecycleStateRequest 变量)。至于中间的周期，比如onCreate、onStart就会插在这个事务的过程中调用。
 
-我们回顾一下onCreate的调用，在TransactionExecutor的executeCallbacks方法里面，通过遍历mActivityCallbacks 获取到LaunchActivityItem，由它调用ActivityThread的handleLaunchActivity方法，从而触发onCreate。而onStart则是通过performLifecycleSequence 方法调用ActivityThread的handleStartActivity。
+我们回顾一下onCreate的调用：在TransactionExecutor的executeCallbacks方法里面，通过遍历mActivityCallbacks 获取到LaunchActivityItem，由它调用ActivityThread的handleLaunchActivity方法，从而触发onCreate。而onStart则是通过performLifecycleSequence 方法调用ActivityThread的handleStartActivity。
 
 ## 5、onPause
 
@@ -558,7 +557,6 @@ public final class ActivityThread extends ClientTransactionHandler {
      private Bundle performPauseActivity(ActivityClientRecord r, boolean finished, String reason,
             PendingTransactionActions pendingActions) {
         ....
-        
         final boolean shouldSaveState = !r.activity.mFinished && r.isPreHoneycomb();
         if (shouldSaveState) {
             // 调用onSaveInstanceState周期
@@ -599,7 +597,7 @@ public class Activity extends ContextThemeWrapper{
 
 在处理完onPause后，ATMS实际发的是OnDestory事务，可以通过debug方式看出来
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/5.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/5.png" width="100%" height="40%">
 
 那onStop周期的事务跑哪去了？在分析onStart周期的时候，有提到 mHelper.getLifecyclePath 这么一个接口，主要的作用就是帮ATMS填充缺省的周期，比如onStart和onStop：
 
@@ -619,9 +617,7 @@ public class TransactionExecutorHelper {
                     mLifecycleSequence.add(i);
                 }
             }
-        } else {
-            ....
-        }
+        } 
         ....
         return mLifecycleSequence;
     }
@@ -630,7 +626,7 @@ public class TransactionExecutorHelper {
 
 通过debug我们也可以看出来
 
-<img src="D:/myBlog/weiwangqiang.github.io/img/blog_activity_lifecycle/4.png" width="100%" height="40%">
+<img src="/img/blog_activity_lifecycle/4.png" width="100%" height="40%">
 
 ```java
    private void performLifecycleSequence(ActivityClientRecord r, IntArray path, ClientTransaction transaction) {
@@ -689,7 +685,7 @@ public class Activity extends ContextThemeWrapper{
 }
 ```
 
-##　7、onDestory
+## 7、onDestory
 
 在分析onStop的时候，通过debug知道ATMS传过来的lifecycleItem是DestroyActivityItem。注意，这里并没有将执行结果通知ATMS。
 
@@ -776,19 +772,13 @@ public class Activity extends ContextThemeWrapper{
 
 至此，activity完整的生命周期就分析完了。
 
-## 8、流程总结
-
-对应的UML图如下
-
-
-
 ## 后记
 
 一顿分析下来，其实核心还是ActivityThread这个类。ATMS通过ClientTransactionItem对象，实现部分的周期调用（OnResume，onPause，onDestory），其他的周期要么通过TransactionExecutorHelper补充调用（比如onCreate，onStart、onStop），要么就是在调用最终周期的时候补充调用（比如onPostCreate，onPostResume）。
 
 ATMS对于周期的调用，就发了三个请求事务item：LaunchActivityItem、PauseActivityItem、DestroyActivityItem。为啥？binder通信虽然很快，但是总会有消耗的。那为啥不去掉PauseActivityItem？这个就涉及到两个activity之间启动的生命周期顺序了。
 
-
+——Weiwq  于 2021.06 广州
 
 
 
