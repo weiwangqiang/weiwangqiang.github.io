@@ -772,6 +772,12 @@ public class Activity extends ContextThemeWrapper{
 
 至此，activity完整的生命周期就分析完了。
 
+## 8、完整时序图
+
+献上呕心沥血画出来的activity生命周期时序图！
+
+<img src="/img/blog_activity_lifecycle/lifecycler_uml.png" width="100%" height="60%">
+
 ## 后记
 
 一顿分析下来，其实核心还是ActivityThread这个类。ATMS通过ClientTransactionItem对象，实现部分的周期调用（OnResume，onPause，onDestory），其他的周期要么通过TransactionExecutorHelper补充调用（比如onCreate，onStart、onStop），要么就是在调用最终周期的时候补充调用（比如onPostCreate，onPostResume）。
