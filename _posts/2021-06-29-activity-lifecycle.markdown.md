@@ -6,6 +6,7 @@ date:       2021-06-29 22:08:00
 author:     "Weiwq"
 header-img: "img/background/post-bg-android-1.jpg"
 catalog:  true
+isTop:  true
 tags:
     - Android
 
@@ -595,7 +596,93 @@ public class Activity extends ContextThemeWrapper{
 
 ## 6、onStop
 
-在处理完onPause后，ATMS实际发的是OnDestory事务，可以通过debug方式看出来
+onStop周期的调用需要分两种情况：1）Activity没有被销毁，2）Activity被销毁（即调用OnDestory周期）
+
+### 1）没有销毁
+
+通过debug可以看出来，ATMS发过来的是StopActivityItem
+
+<img src="/img/blog_activity_lifecycle/7.png" width="100%" height="40%">
+
+对应的path size为0
+
+<img src="/img/blog_activity_lifecycle/8.png" width="100%" height="40%">
+
+所以，我们直接看StopActivityItem的实现
+
+```java
+public class StopActivityItem extends ActivityLifecycleItem {
+    private static final String TAG = "StopActivityItem";
+    private int mConfigChanges;
+
+    @Override
+    public void execute(ClientTransactionHandler client, IBinder token,
+            PendingTransactionActions pendingActions) {
+        Trace.traceBegin(TRACE_TAG_ACTIVITY_MANAGER, "activityStop");
+        // 调用ActivityThread的handleStopActivity方法
+        client.handleStopActivity(token, mConfigChanges, pendingActions,
+                true /* finalStateRequest */, "STOP_ACTIVITY_ITEM");
+        Trace.traceEnd(TRACE_TAG_ACTIVITY_MANAGER);
+    }
+
+    @Override
+    public void postExecute(ClientTransactionHandler client, IBinder token,
+            PendingTransactionActions pendingActions) {
+        // 通知ATMS 当前activity处于onStop状态
+        client.reportStop(pendingActions);
+    }
+    ...
+}
+
+```
+
+回到ActivityThread的handleStopActivity方法
+
+```java
+public final class ActivityThread extends ClientTransactionHandler {
+    @Override
+    public void handleStopActivity(IBinder token, int configChanges,
+            PendingTransactionActions pendingActions, boolean finalStateRequest, String reason) {
+        final ActivityClientRecord r = mActivities.get(token);
+        r.activity.mConfigChangeFlags |= configChanges;
+        final StopInfo stopInfo = new StopInfo();
+        performStopActivityInner(r, stopInfo, true /* saveState */, finalStateRequest,
+                reason);
+      // 将activity设置为不可见
+      updateVisibility(r, false);
+    }
+        
+    private void performStopActivityInner(ActivityClientRecord r, StopInfo info,
+            boolean saveState, boolean finalStateRequest, String reason) {
+           .....
+           callActivityOnStop(r, saveState, reason);
+    }
+   
+    private void callActivityOnStop(ActivityClientRecord r, boolean saveState, String reason) {
+        try {
+            r.activity.performStop(r.mPreserveWindow, reason);
+        } catch (SuperNotCalledException e) {
+             ....
+        }
+   }
+}
+```
+
+最后到了Activity的performStop方法
+
+```java
+public class Activity extends ContextThemeWrapper{
+     final void performStop(boolean preserveWindow, String reason) {
+           mFragments.dispatchStop();
+         // 直接调用activity的onStop方法
+          mInstrumentation.callActivityOnStop(this);
+     }
+}
+```
+
+### 2）被销毁
+
+这种情况与上面的不太一样，在处理完onPause后，ATMS实际发的是OnDestory事务，可以通过debug方式看出来
 
 <img src="/img/blog_activity_lifecycle/5.png" width="100%" height="40%">
 
@@ -641,53 +728,11 @@ public class TransactionExecutorHelper {
    }
 ```
 
-这就回到了ActivityThread的handleStopActivity方法
-
-```java
-public final class ActivityThread extends ClientTransactionHandler {
-    @Override
-    public void handleStopActivity(IBinder token, int configChanges,
-            PendingTransactionActions pendingActions, boolean finalStateRequest, String reason) {
-        final ActivityClientRecord r = mActivities.get(token);
-        r.activity.mConfigChangeFlags |= configChanges;
-        final StopInfo stopInfo = new StopInfo();
-        performStopActivityInner(r, stopInfo, true /* saveState */, finalStateRequest,
-                reason);
-      // 将activity设置为不可见
-      updateVisibility(r, false);
-    }
-        
-    private void performStopActivityInner(ActivityClientRecord r, StopInfo info,
-            boolean saveState, boolean finalStateRequest, String reason) {
-           .....
-           callActivityOnStop(r, saveState, reason);
-    }
-   
-    private void callActivityOnStop(ActivityClientRecord r, boolean saveState, String reason) {
-        try {
-            r.activity.performStop(r.mPreserveWindow, reason);
-        } catch (SuperNotCalledException e) {
-             ....
-        }
-   }
-}
-```
-
-最后到了Activity的performStop方法
-
-```java
-public class Activity extends ContextThemeWrapper{
-     final void performStop(boolean preserveWindow, String reason) {
-           mFragments.dispatchStop();
-         // 直接调用activity的onStop方法
-          mInstrumentation.callActivityOnStop(this);
-     }
-}
-```
+接下来的流程就跟上面的一样，这里不再赘述，直接看onDestory周期。
 
 ## 7、onDestory
 
-在分析onStop的时候，通过debug知道ATMS传过来的lifecycleItem是DestroyActivityItem。注意，这里并没有将执行结果通知ATMS。
+上面通过debug知道ATMS传过来的lifecycleItem是DestroyActivityItem。注意，这里并没有将执行结果通知ATMS。
 
 ```java
 public class DestroyActivityItem extends ActivityLifecycleItem {
@@ -785,11 +830,5 @@ public class Activity extends ContextThemeWrapper{
 ATMS对于周期的调用，就发了三个请求事务item：LaunchActivityItem、PauseActivityItem、DestroyActivityItem。为啥？binder通信虽然很快，但是总会有消耗的。那为啥不去掉PauseActivityItem？这个就涉及到两个activity之间启动的生命周期顺序了。
 
 ——Weiwq  于 2021.06 广州
-
-
-
-
-
-
 
 
