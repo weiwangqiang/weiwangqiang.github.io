@@ -1,13 +1,13 @@
 ---
 layout:     post
-title:      "Android跨进程之ADIL原理"
-subtitle:   " \"带你剖析AIDL实现原理\""
+title:      "常用Linux命令"
+subtitle:   " \"适用Android shell环境下\""
 date:       2021-05-16 17:30:00
 author:     "Weiwq"
 header-img: "img/background/post-sample-image.jpg"
 catalog: true
 tags:
-    - Android
+    - Linux
 
 ---
 
@@ -23,11 +23,11 @@ $ grep -n "keyword" -r ./
 
 ```
 
-### Android下的system/app 路径，执行如下命令可以找到包含该`string`的apk
+### Android下的指定路径，执行如下命令可以找到包含该`string`的apk或文件
 
 ```shell
 
-$ grep -rn "string"
+$ grep -rn "string" .
 
 ```
 
@@ -49,7 +49,6 @@ $ find . -name "demo.txt" // 查找demo.txt
 $ find . -name "demo*" // 查找文件名开头是"demo" 的文件
 
 ```
-
 
 
 ## 2、删除命令：rm
@@ -78,5 +77,3 @@ $ rm -rf demo.txt demo
 > echo $ANDROID_NDK_HOME // 查看 ANDROID_NDK_HOME 的配置
 
 ```
-
-/
