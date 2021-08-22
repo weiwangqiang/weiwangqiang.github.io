@@ -30,7 +30,7 @@ dependencies {
 在安装测试app后，点击leak的图标进入leak应用，点击`Dump Heap Now`即可，内存泄露引用链如下
 
 <center class="half">
-    <img src="/img/blog_android_performance/10.png" width="50%" height="40%"/><img src="/img/blog_android_performance/9.png" width="50%" height="40%"/>
+    <img src="/img/blog_android_performance/10.png" width="35%" height="40%"/><img src="/img/blog_android_performance/9.png" width="35%" height="40%"/>
 </center>
 
 
@@ -83,7 +83,7 @@ public class AppBlockCanaryContext extends BlockCanaryContext {
 
 展示dump信息的页面基于LeakCanary界面修改，可以很清楚看到哪里卡了和卡的时长
 
-<img src="/img/blog_android_performance/17.png" width="50%" height="40%">
+<img src="/img/blog_android_performance/17.png" width="40%" height="40%">
 
 ## 三、Perfdog
 
