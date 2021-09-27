@@ -112,7 +112,7 @@ public class Main {
 
 对应的编译class文件如下，可以看到Override注解已经被移除，但是Test注解还在。
 
-<img src="D:\myBlog\weiwangqiang.github.io\img/blog_java_annotation/1.png" width="50%" height="40%">
+<img src="img/blog_java_annotation/1.png" width="50%" height="40%">
 
 那SOUIRCE注解是怎么帮助编写正确的代码呢？
 
@@ -158,7 +158,7 @@ public class Main {
 
 我们用运行时注解实现butterKnife的功能，核心思路：通过遍历指定的注解，拿到值后，用activity的方法获取view，再反射绑定到对应的属性上。
 
-## 1）接口
+## 接口
 
 首先定义两个注解接口
 
@@ -179,7 +179,7 @@ public @interface OnClick {
 
 ```
 
-## 2）处理器
+## 处理器
 
 定义ViewProcessor，用于在运行时解析注解。
 
@@ -255,7 +255,7 @@ public class ViewProcessor {
 }
 ```
 
-## 3）使用
+## 使用
 
 在onCreate的时候，初始化注解处理器，实现注解的解析。
 
@@ -284,7 +284,7 @@ public class RuntimeActivity extends AppCompatActivity {
 }
 ```
 
-## 4）小结
+## 小结
 
 - 优点：通过反射方式，实现赋值和方法调用，对于域或方法的访问范围不做要求，框架实现较为简单。
 - 缺点：使用大量反射，运行时性能较差。
@@ -293,11 +293,11 @@ public class RuntimeActivity extends AppCompatActivity {
 
 **作用**：在编译期间生效的，常用于在编译期间插入模板代码。
 
-## 1）什么是APT
+## 什么是APT
 
 这里不得不提一下APT，APT(Annotation Processing Tool)是 javac 提供的一种可以处理注解的工具，用来在编译时扫描和处理注解的，简单来说就是可以通过 APT 获取到注解及其注解所在位置的信息，可以使用这些信息在编译器生成代码。编译时注解就是通过 APT 来通过注解信息生成代码来完成某些功能，典型代表有 ButterKnife、Dagger等。
 
-## 2）AbstractProcessor
+## AbstractProcessor
 
 AbstractProcessor 是实现编译注解的关键入口，自定义的注解处理器都是需要继承于它，其中以下方法比较重要：
 
@@ -306,7 +306,7 @@ AbstractProcessor 是实现编译注解的关键入口，自定义的注解处�
 - getSupportedSourceVersion：获取java版本。
 - process：解析注解，生成代码模板的实现回调。
 
-## 3）Element
+## Element
 
 Element 用于表示程序元素，例如模块、包、类或方法。每个元素代表一个静态的、语言级别的构造。而Elements 是处理 Element 的工具类，只提供接口。
 
@@ -320,7 +320,7 @@ Element 用于表示程序元素，例如模块、包、类或方法。每个元
 - api：用于定义注解，比如BindView
 - butterKnife：用于处理注解，生成代码的逻辑
 
-## 1）接口
+## 接口
 
 该模块定义了两个注解BindView和Onclick
 
@@ -340,7 +340,7 @@ public @interface Onclick {
 
 ```
 
-## 2）处理器
+## 处理器
 
 butterKnife 模块需要依赖第三方库
 
@@ -501,7 +501,7 @@ public class ButterKnifeProcessor extends AbstractProcessor {
 
 上面的代码大家可能会不知所措，其通过JavaPoet 来声明生成的java文件结构。具体的用法可以参考[JavaPoet使用详解](https://blog.csdn.net/IO_Field/article/details/89355941)
 
-## 3）使用
+## 使用
 
 app模块主要依赖
 
@@ -562,12 +562,12 @@ public final class MainActivity_ViewBind {
 }
 ```
 
-## 4）小结 
+## 小结 
 
 - 优点：通过插入编译期间，生成模板代码，即java文件，避免了运行时注解中使用反射的实现方式，提高运行时效率。
 - 缺点：域或方法的访问范围必须是public，否则就会失败。
 
-## 后记
+# 后记
 
 也许我们不一定要自己造轮子，但应该需要知道对应的基础实现原理，这样我们才能透过现象看本质。
 
