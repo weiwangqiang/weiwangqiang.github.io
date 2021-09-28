@@ -77,3 +77,26 @@ $ rm -rf demo.txt demo
 > echo $ANDROID_NDK_HOME // 查看 ANDROID_NDK_HOME 的配置
 
 ```
+
+## 4、软链接
+
+我们可以通过软链接方式创建源文件的快捷方式
+
+```cmd
+// 格式为：ln -s 源文件绝对路径，目标绝对路径
+// 比如：
+sudo ln -s /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/subl
+```
+
+如果提示已经存在，则可以强制覆盖
+
+```mcd
+ln -fs  /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/local/bin/sublime
+```
+
+查看对应的软链接
+
+```cmd
+ ls -l /usr/local/bin/subl  
+```
+
