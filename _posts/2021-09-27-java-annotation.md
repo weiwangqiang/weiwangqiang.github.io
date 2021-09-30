@@ -247,7 +247,7 @@ public class ViewProcessor {
                     continue;
                 }
                 field.setAccessible(true);
-                // 给该域负值
+                // 给该域赋值
                 field.set(activity, view);
             }
         }
@@ -359,6 +359,7 @@ dependencies {
 对应的注解处理器是 ButterKnifeProcessor
 
 ```java
+
 // 用于声明该类为注解处理器
 @AutoService(Processor.class)
 public class ButterKnifeProcessor extends AbstractProcessor {
@@ -366,10 +367,10 @@ public class ButterKnifeProcessor extends AbstractProcessor {
     private Messager mMessager;
     // 用于解析 Element
     private Elements mElements;
-    // 存储某个类下面对应的BindModel
+    // 存储每个类下面对应的BindView
     private Map<TypeElement, List<BindModel>> mTypeElementMap = new HashMap<>();
-    // 存储id绑定的方法，即OnClick
-    private Map<Integer, Element> mOnclickElementMap = new HashMap<>();
+    // 存储m每个类中，id绑定的方法，即OnClick
+    private Map<TypeElement, Map<Integer, Element>> mOnclickElementMap = new HashMap<>();
     // 用于将创建的java程序输出到相关路径下。
     private Filer mFiler;
 
@@ -380,6 +381,7 @@ public class ButterKnifeProcessor extends AbstractProcessor {
         mElements = processingEnv.getElementUtils();
         mFiler = processingEnv.getFiler();
     }
+
     /**
      * 此方法用来设置支持的注解类型，没有设置的无效（获取不到）
      */
@@ -391,66 +393,85 @@ public class ButterKnifeProcessor extends AbstractProcessor {
         supportTypes.add(Onclick.class.getCanonicalName());
         return supportTypes;
     }
+
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
 
-   @Override
+    @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         mMessager.printMessage(Diagnostic.Kind.NOTE, "===============process start =============");
         mTypeElementMap.clear();
-        // Process each @BindView element.
+        // 解析 @BindView element.
         for (Element element : roundEnv.getElementsAnnotatedWith(BindView.class)) {
             verifyAnnotation(element, BindView.class, ElementKind.FIELD);
+            // 可以理解为类的element
             TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
+            // 获取class 完整name，比如：com.example.annotation.buildtime.MainActivity
             Name qualifiedName = enclosingElement.getQualifiedName();
+            // 获取变量名,比如 button1
             Name simpleName = element.getSimpleName();
 
-            // Assemble information on the field.
+            //获取到view的id
             int id = element.getAnnotation(BindView.class).value();
             String content = String.format("====> qualifiedName: %s simpleName: %s id: %d"
                     , qualifiedName, simpleName, id);
             mMessager.printMessage(Diagnostic.Kind.NOTE, content);
             List<BindModel> modelList = mTypeElementMap.get(enclosingElement);
             if (modelList == null) {
+                // 每个activity会有多个BindView注解
                 modelList = new ArrayList<>();
             }
             modelList.add(new BindModel(element, id));
             mTypeElementMap.put(enclosingElement, modelList);
         }
-
+        // 解析 @Onclick element.
         for (Element element : roundEnv.getElementsAnnotatedWith(Onclick.class)) {
             verifyAnnotation(element, Onclick.class, ElementKind.METHOD);
+            TypeElement enclosingElement = (TypeElement) element.getEnclosingElement();
+            Map<Integer, Element> methods = mOnclickElementMap.get(enclosingElement);
+            if (methods == null) {
+                // 每个类会有多个Onclick注解
+                methods = new HashMap<>();
+            }
             int[] ids = element.getAnnotation(Onclick.class).value();
             for (int id : ids) {
-                mOnclickElementMap.put(id, element);
+                // 将id与方法绑定
+                methods.put(id, element);
             }
+            // 将methods 与类绑定
+            mOnclickElementMap.put(enclosingElement, methods);
         }
-
+        // 遍历类
         mTypeElementMap.forEach((typeElement, bindModels) -> {
+            // 获取包名
             String packageName = mElements.getPackageOf(typeElement)
                     .getQualifiedName().toString();
             String className = typeElement.getSimpleName().toString();
+            // 生成对应的_ViewBind 类名
             String bindClass = className + "_ViewBind";
-             // 生成构造函数
+            // 生成构造函数
             MethodSpec.Builder builder = MethodSpec.constructorBuilder()
                     .addModifiers(Modifier.PUBLIC) // 声明为public
                     .addParameter(ClassName.bestGuess(className), "target"); // 添加构造参数
             bindModels.forEach(model -> {
-                // 构造函数内添加代码
+                // 构造函数内添加findViewById代码
                 builder.addStatement("target.$L = ($L)target.findViewById($L)",
                         model.getViewFieldName(), model.getViewFieldType(), model.getResId());
             });
             String viewPath = "android.view.View";
-            mOnclickElementMap.forEach((id, element) -> {
-                // 构造函数内添加代码
-                builder.addStatement("(($L) target.findViewById($L)).setOnClickListener((view) -> {\n" +
-                                "            target.$L();\n" +
-                                "        })",
-                        viewPath, id, element.getSimpleName().toString());
-            });
+            Map<Integer, Element> clickMethods = mOnclickElementMap.get(typeElement);
+            if (clickMethods != null) {
+                clickMethods.forEach((id, element) -> {
+                    // 构造函数内添加setOnClickListener代码
+                    builder.addStatement("(($L) target.findViewById($L)).setOnClickListener((view) -> {\n" +
+                                    "            target.$L();\n" +
+                                    "        })",
+                            viewPath, id, element.getSimpleName().toString());
+                });
+            }
             // 构建类
             TypeSpec typeSpec = TypeSpec.classBuilder(bindClass)
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -470,7 +491,7 @@ public class ButterKnifeProcessor extends AbstractProcessor {
         mMessager.printMessage(Diagnostic.Kind.NOTE, "===============process end=============");
         return true;
     }
-    
+
     // 做校验动作
     private boolean verifyAnnotation(Element element, Class<?> annotationClass, ElementKind targetKind) {
         if (element.getKind() != targetKind) {
@@ -501,6 +522,39 @@ public class ButterKnifeProcessor extends AbstractProcessor {
 
 上面的代码大家可能会不知所措，其通过JavaPoet 来声明生成的java文件结构。具体的用法可以参考[JavaPoet使用详解](https://blog.csdn.net/IO_Field/article/details/89355941)
 
+BindModel 类是用于存储Element数据。方便代码的生成。
+
+```jva
+public class BindModel {
+    // 成员变量Element
+    private VariableElement mViewFieldElement;
+    // 成员变量类型
+    private TypeMirror mViewFieldType;
+    // View的资源Id
+    private int mResId;
+
+    public BindModel(Element element, int resId) {
+        // 校验Element是否是成员变量
+        if (element.getKind() != ElementKind.FIELD) {
+            throw new IllegalArgumentException("element is not FIELD");
+        }
+        // 成员变量Element
+        mViewFieldElement = (VariableElement) element;
+        // 成员变量类型
+        mViewFieldType = element.asType();
+        // 获取注解的值
+        mResId = resId;
+    }
+
+    public int getResId() {
+        return mResId;
+    }
+    ....
+}
+```
+
+
+
 ## 使用
 
 app模块主要依赖
@@ -521,6 +575,31 @@ dependencies {
     // 注意，是通过 annotationProcessor方式依赖butterKnife 而不是implementation。
     annotationProcessor project(path: ':butterKnife')
     implementation project(path: ':api')
+}
+```
+
+还有一个问题需要解决的，ButterKnifeProcessor 为我们定义了代码模板，但是需要一个类将activity或者fragment与模板绑定，即ViewInjector：
+
+```java
+
+public class ViewInjector {
+    private static final String SUFFIX = "_ViewBind";
+    public static void injectView(Activity activity) {
+        findProxyActivity(activity);
+    }
+    /**
+     * 通过反射创建要使用的类的对象
+     */
+    private static void findProxyActivity(Object activity) {
+        try {
+            Class<?> clazz = activity.getClass();
+            String newClass = clazz.getName() + SUFFIX;
+            Class<?> injectorClazz = Class.forName(newClass);
+            injectorClazz.getConstructor(clazz).newInstance(activity);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 ```
 
@@ -569,7 +648,7 @@ public final class MainActivity_ViewBind {
 
 # 后记
 
-也许我们不一定要自己造轮子，但应该需要知道对应的基础实现原理，这样我们才能透过现象看本质。
+上面没有具体分析butterKnife的源码，但是其原理与上面写的Demo有异曲同工之妙。也许我们不一定要自己造轮子，但应该需要知道对应的基础实现原理，这样我们才能透过现象看本质。
 
 附上源码[github链接](https://github.com/weiwangqiang/csdnDemo/tree/annotation)
 
