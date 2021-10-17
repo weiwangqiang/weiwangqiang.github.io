@@ -28,10 +28,10 @@ dependencies {
 ```
 
 在安装测试app后，点击leak的图标进入leak应用，点击`Dump Heap Now`即可，内存泄露引用链如下
+<img src="/img/blog_android_performance/10.png" width="35%" height="40%"/>|<img src="/img/blog_android_performance/9.png" width="35%" height="40%"/>
+---|---
 
-<center class="half">
-    <img src="/img/blog_android_performance/10.png" width="35%" height="40%"/><img src="/img/blog_android_performance/9.png" width="35%" height="40%"/>
-</center>
+
 
 
 ## 二、BlockCanary
@@ -141,7 +141,7 @@ profiler支持CPU、memory、network、energy维度的分析。
 
 ### 1）dumpsys meminfo
 
-可以通过如下命令查看包为` com.example.kotlindemo`的内存信息
+可以通过如下命令查看包为` com.example.kotlindemo`的内存信息（也可以查看PID对应的信息）
 
 ```java
 C:\Users> adb shell dumpsys meminfo com.example.kotlindemo
@@ -196,16 +196,11 @@ Uptime: 5765033 Realtime: 5765033
 
 这里的单位是kb，其中
 
-- Private Dirty：是应用独占内存大小，包含独自分配的部分和应用进程从Zygote复制时被修改的Zygote分配的内存页。（重点关注之一）
-
-- Private clean：是已经映射持久文件使用的内存页，比如正在被执行的代码。
-
 - Pss Total：实际使用的内存，将跨进程共享页也加入进来，会比在profiler中的要大一些。（重点关注之一）
-
+- Private Dirty：是应用独占内存大小，包含独自分配的部分和应用进程从Zygote复制时被修改的Zygote分配的内存页。（重点关注之一）
+- Private clean：是已经映射持久文件使用的内存页，比如正在被执行的代码。
 - Dalvik Heap：Dalvik 虚拟机分配的内存。
-
 - Java Heap：java堆大小。
-
 - `Objects` 中显示持有对象的个数，从这里我们可以分析view、activity的个数。其中，可以通过看activity的个数判断是否发生内存泄漏。
 
 ### 2）systrace
@@ -290,6 +285,61 @@ Debug.dumpHprofData("/sdcard/dump.hprof")
 pull出来用Android studio打开如下
 
 <img src="/img/blog_android_performance/19.png" width="100%" height="40%">
+
+### 6）查看RAM
+
+```cmd
+$ cat /proc/meminfo | head -n 4
+MemTotal:        5861796 kB // 总共内存
+MemFree:           90268 kB // 空闲内存
+MemAvailable:    3392216 kB // 可用内存（即剩余运行内存）
+Buffers:         1049552 kB // 缓存
+```
+
+### 7）查看CPU——top
+
+```cmd
+$ top
+Tasks: 743 total,   2 running, 737 sleeping,   0 stopped,   0 zombie
+Mem:   5861796k total,  5683832k used,   177964k free,  1057640k buffers
+Swap:  2621436k total,   478088k used,  2143348k free,  1994168k cached
+800%cpu  21%user   4%nice   8%sys 764%idle   1%iow   2%irq   1%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+ 5407 u0_a99       20   0 1.7G  69M  45M S 19.0   1.2  13:15.58 com.miui.voiceassist:voice_trigger
+13736 shell        20   0  14M 3.0M 1.6M R  3.3   0.0   0:00.25 top
+  704 audioserver  20   0  41M 6.3M 5.9M S  2.3   0.1   2:09.01 android.hardware.audio@2.0
+```
+
+其中
+
+- 800%cpu：即cpu核数，这里800%指有8个核。
+- 21%user：即用户态的占比占单核的21%
+- 4%nice：优先级为负数的进程占用的cpu
+- 8%sys：处于核心态的cpu占比
+- 764%idle：CPU处于空闲状态时间比例。一般而言，idel + sys + user + nice 约等于cpu
+- 1%iow：IO等待的CPU占比
+- 2%irq：硬中断的cpu占比
+- 1%sirq：软中断的cpu占比
+- PID：即进程id
+- PR：优先级
+- VIRT：虚拟内存大小，包括：进程使用的库、代码、数据等。
+- RES：常驻内存，当前进程使用的内存大小，不包含swap out
+- SHR：除了自身进程的共享内存，也包括其他进程的共享内存。
+- %CPU：即该进程占用的CPU占比。
+- %MEM ：即该进程占用的内存占比。
+
+### 8）查看CPU——dumpsys
+
+可以查看每个进程所用的CPU百分比
+
+```cmd
+$ dumpsys cpuinfo
+CPU usage from 476124ms to 176038ms ago (2021-10-17 13:35:57.070 to 2021-10-17 13:40:57.156):
+  17% 5407/com.miui.voiceassist:voice_trigger: 16% user + 0.4% kernel / faults: 10382 minor
+  2.6% 704/android.hardware.audio@2.0-service: 0.7% user + 1.9% kernel
+```
+
+更多dumpsys命令见[android调试——教你用dumpsys命令调试](https://weiwangqiang.github.io/2020/03/16/dumpsys-debug-detail/)
 
 ## 六、GPU
 

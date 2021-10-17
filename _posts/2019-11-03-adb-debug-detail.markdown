@@ -176,7 +176,7 @@ adb shell am start -a  android.intent.action.VIEW
 
 | 命令                                                         | 说明                                                         |
 | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| `start [options] <intent>`                                   | 启动 `intent` 指定的 `Activity`。 请参阅intent规范<br>其中***options***包括<br><br/> `-D`：启用调试。<br><br/>`-N`: 打开native debug<br><br>`-W`: wait for launch to complete<br><br>`--start-profiler <FILE>`：启动分析器并将结果发送到 `file`。<br><br/>`-P <FILE>`：类似于 `--start-profiler`，但当应用进入空闲状态时分析停止。<br><br/>`-R <COUNT>`：重复启动 Activity `count` 次。在每次重复前，将完成顶层 Activity。<br><br/>`-S`：启动 Activity 前强行停止目标应用。<br><br/>`--opengl-trace`：启用对 OpenGL 函数的跟踪。<br><br> `--track-allocation`: 启用对象分配的跟踪 |
+| `start [options] <intent>`                                   | 启动 `intent` 指定的 `Activity`。 请参阅intent规范<br>其中***options***包括<br><br/> `-D`：启用调试。<br><br/>`-N`: 打开native debug<br><br>`-W`: 获取activity的启动时间<br><br>`--start-profiler <FILE>`：启动分析器并将结果发送到 `file`。<br><br/>`-P <FILE>`：类似于 `--start-profiler`，但当应用进入空闲状态时分析停止。<br><br/>`-R <COUNT>`：重复启动 Activity `count` 次。在每次重复前，将完成顶层 Activity。<br><br/>`-S`：启动 Activity 前强行停止目标应用。<br><br/>`--opengl-trace`：启用对 OpenGL 函数的跟踪。<br><br> `--track-allocation`: 启用对象分配的跟踪 |
 | `startservice <intent>`                                      | 启动 `intent` 指定的 `Service`。请参阅intent规范             |
 | `stopservice <intent>`                                       | 停止intent指定的service。请参阅intent规范                    |
 | `force-stop <package>`                                       | 强行停止与 `package`（应用的软件包名称）关联的所有进程。     |
