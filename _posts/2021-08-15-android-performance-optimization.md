@@ -28,10 +28,10 @@ dependencies {
 ```
 
 在安装测试app后，点击leak的图标进入leak应用，点击`Dump Heap Now`即可，内存泄露引用链如下
- <img src="/img/blog_android_performance/10.png" width="20%" height="40%"/> | <img src="/img/blog_android_performance/9.png" width="20%" height="40%"/> 
- ------------------------------------------------------------ | ------------------------------------------------------------ 
 
-
+<center class="half">
+<img src="/img/blog_android_performance/10.png" width="35%" height="40%"/><img src="/img/blog_android_performance/9.png" width="35%" height="40%"/> 
+</center>
 
 
 ## 二、BlockCanary
