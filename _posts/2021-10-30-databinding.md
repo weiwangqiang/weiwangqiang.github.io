@@ -172,6 +172,7 @@ android {
         android:layout_height="match_parent"
         android:orientation="vertical"
         tools:context=".MainActivity">
+
         <TextView
             android:id="@+id/bind_text1"
             android:layout_width="match_parent"
@@ -179,12 +180,12 @@ android {
             android:gravity="center"
             android:text="@{video.title}" />
 
-        <TextView
+        <Button
             android:id="@+id/bind_text2"
             android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:gravity="center"
-            android:text="@{video.url}" />
+            android:layout_height="50dp"
+            android:text="@{String.valueOf(video.score + 1)}" />
+
     </LinearLayout>
 </layout>
 ```
@@ -195,12 +196,12 @@ android {
 
 ```java
 package com.example.databinding;
-class VideoBean {
+public class VideoBean {
     public String title;
-    public String url;
-    public VideoBean(String title, String url) {
+    public int score;
+    public VideoBean(String title, int score) {
         this.title = title;
-        this.url = url;
+        this.score = score;
     }
 }
 ```
@@ -226,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         // 获取对应的binding类
         mainBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(mainBinding.getRoot());
-        video = new VideoBean("小黄人", "http://xiaohuangren.com");
+        video = new VideoBean("小黄人", 8);
         // 设置对应的数据
         mainBinding.setVideo(video);
         // 设置周期监听，可选
@@ -242,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
 当然，我们也可以在布局中添加对应的事件响应
 
 ```java
-        <Button
+      <Button
             android:id="@+id/bind_text2"
             android:layout_width="match_parent"
             android:layout_height="50dp"
@@ -250,20 +251,29 @@ public class MainActivity extends AppCompatActivity {
             android:text="@{String.valueOf(video.score + 1)}" />
 ```
 
-在类中添加 increaseScore方法
+在类中添加 increaseScore方法，如下所示，即可实现点击button修改score的值，并更新ui。
 
 ```java
-public class VideoBean {
-    private ActivityMainBinding activityMainBinding;
+public class VideoBean extends BaseObservable {
+    public String title;
+    // 声明该属性是可绑定监听的
+    @Bindable
     public int score;
+    public VideoBean(String title, int score) {
+        this.title = title;
+        this.score = score;
+    }
 
     public void increaseScore(View view) {
         score++;
-        activityMainBinding.setVideo(this);
+        // 通知score属性变化了
+        notifyPropertyChanged(BR.score);
     }
-    ...
 }
+
 ```
+我们只需要修改少量代码即可实现双向绑定，接下来将会讲解对应的原理。
+
 更多见[布局和绑定表达式](https://developer.android.google.cn/topic/libraries/data-binding/expressions?hl=zh-cn)
 
 ## 原理
@@ -592,9 +602,9 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
 
 ### 刷新UI
 
-回到ActivityMainBindingImpl，executeBindings 这个刷新的方法是在哪里调用的呢？
+当我们调用setVideo方法设置bean对象的时候，它是如何显示值的呢？
 
-还记得在MainActivity里面，我们需要调用ActivityMainBinding的setVideo方法设置VideoBean吗，该方法实现如下
+回到ActivityMainBinding，它的setVideo方法实现如下：
 
 ```java
     public void setVideo(@Nullable com.example.databinding.VideoBean Video) {
@@ -701,11 +711,371 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
 
 其内部通过Choreographer 监听新一帧的刷新，触发UI的刷新（调用setText方法），这样有一个好处是，我们可以在子现场调用set方法更新bean数据。
 
+### 事件触发
+
+说完UI的刷新，再看看我们在点击的时候，它又是怎么修改我们的值并更新ui的
+
+我们再看看VideoBean类的实现：
+
+```java
+public class VideoBean extends BaseObservable {
+    ....
+    public void increaseScore(View view) {
+        score++;
+        notifyPropertyChanged(BR.score);
+    }
+}
+```
+
+它继承了BaseObservable，然后在increaseScore方法里面调用了notifyPropertyChanged方法，显然，这是基于观察者模式实现的。
+
+`BR.score`  值是多少呢？BR 的类路径如下
+
+![](/img/blog_databinding/4.png)
+
+我们看看notifyPropertyChanged 的实现
+
+```java
+public class BaseObservable implements Observable {    
+     private transient PropertyChangeRegistry mCallbacks;
+     ...
+     public void notifyPropertyChanged(int fieldId) {
+        synchronized (this) {
+            if (mCallbacks == null) {
+                return;
+            }
+        }
+        // 这里的mCallbacks是CallbackRegistry类
+        mCallbacks.notifyCallbacks(this, fieldId, null);
+    }    
+}
+```
+
+往下看CallbackRegistry 的实现
+
+```java
+public class CallbackRegistry<C, T, A> implements Cloneable {
+    // 1、先调用该方法
+     public synchronized void notifyCallbacks(T sender, int arg, A arg2) {
+        mNotificationLevel++;
+        // 调用内部的方法
+        notifyRecurse(sender, arg, arg2);
+        ...
+    }
+   // 2、调用该方法
+   private void notifyRecurse(T sender, int arg, A arg2) {
+        final int callbackCount = mCallbacks.size();
+        // 这里的mRemainderRemoved为null，所以remainderIndex 为-1
+        final int remainderIndex = mRemainderRemoved == null ? -1 : mRemainderRemoved.length - 1;
+        // notify其他的callback
+        notifyRemainder(sender, arg, arg2, remainderIndex);
+        ....
+    }
+    // 3、接着调用该方法
+    private void notifyRemainder(T sender, int arg, A arg2, int remainderIndex) {
+        if (remainderIndex < 0) {
+            notifyFirst64(sender, arg, arg2);
+        }
+        ....
+    }
+    // 4、调用该方法
+    private void notifyFirst64(T sender, int arg, A arg2) {
+        final int maxNotified = Math.min(Long.SIZE, mCallbacks.size());
+        notifyCallbacks(sender, arg, arg2, 0, maxNotified, mFirst64Removed);
+    }
+    // 5、最后调用该方法
+    private void notifyCallbacks(T sender, int arg, A arg2, final int startIndex,
+            final int endIndex, final long bits) {
+        long bitMask = 1;
+        for (int i = startIndex; i < endIndex; i++) {
+            if ((bits & bitMask) == 0) {
+                // 调用mNotifier 的onNotifyCallback，到这里就暂时无法跟进了
+                mNotifier.onNotifyCallback(mCallbacks.get(i), sender, arg, arg2);
+            }
+            bitMask <<= 1;
+        }
+    }
+}
+```
+
+mNotifier 是在构造函数出赋值的
+
+```java
+public class CallbackRegistry<C, T, A> implements Cloneable {
+    private final NotifierCallback<C, T, A> mNotifier;
+    public CallbackRegistry(NotifierCallback<C, T, A> notifier) {
+        mNotifier = notifier;
+    }
+    ....
+}
+```
+
+而将CallbackRegistry初始化的地方有四处，线索到这里就中断了。
+
+![](/img/blog_databinding/5.png)
+
+还记得BaseObservable里的mCallbacks 变量吗。
+
+```java
+public class BaseObservable implements Observable {    
+     private transient PropertyChangeRegistry mCallbacks;
+     ....
+}
+```
+
+PropertyChangeRegistry 是继承CallbackRegistry的
+
+```java
+public class PropertyChangeRegistry extends
+        CallbackRegistry<Observable.OnPropertyChangedCallback, Observable, Void> {
+
+    private static final CallbackRegistry.NotifierCallback<Observable.OnPropertyChangedCallback, Observable, Void> NOTIFIER_CALLBACK = new CallbackRegistry.NotifierCallback<Observable.OnPropertyChangedCallback, Observable, Void>() {
+        @Override
+        public void onNotifyCallback(Observable.OnPropertyChangedCallback callback, Observable sender,
+                int arg, Void notUsed) {
+            // 上面的mNotifier.onNotifyCallback 调用了callback的onPropertyChanged方法
+            callback.onPropertyChanged(sender, arg);
+        }
+    };
+
+    public PropertyChangeRegistry() {
+        // 把NOTIFIER_CALLBACK传给CallbackRegistry的构造函数，即给mNotifier赋值
+        super(NOTIFIER_CALLBACK);
+    }
+}
+```
+
+而callback是CallbackRegistry内部的一个list成员元素，这里的泛型C即Observable.OnPropertyChangedCallback
+
+```java
+public class CallbackRegistry<C, T, A> implements Cloneable {
+    private List<C> mCallbacks = new ArrayList<C>();
+    ....
+}
+```
+
+问题又来到，mCallbacks 是怎么初始化的？貌似我们遗漏了一些东西
+
+再次回到ActivityMainBindingImpl
+
+```java
+public class ActivityMainBindingImpl extends ActivityMainBinding  {
+    ....
+    public void setVideo(@Nullable com.example.databinding.VideoBean Video) {
+        updateRegistration(0, Video);
+        this.mVideo = Video;
+        synchronized(this) {
+            mDirtyFlags |= 0x1L;
+        }
+        notifyPropertyChanged(BR.video);
+        super.requestRebind();
+    }
+}
+```
+
+在设置VideoBean的方法里面，有一个updateRegistration的方法，跟进去看看
+
+```java
+public abstract class ViewDataBinding ...{
+    private static final CreateWeakListener CREATE_PROPERTY_LISTENER = new CreateWeakListener() {
+        @Override
+        public WeakListener create(ViewDataBinding viewDataBinding, int localFieldId) {
+            return new WeakPropertyListener(viewDataBinding, localFieldId).getListener();
+        }
+    };
+    protected boolean updateRegistration(int localFieldId, Observable observable) {
+        return updateRegistration(localFieldId, observable, CREATE_PROPERTY_LISTENER);
+    }
+    // 这里的listenerCreator参数即CREATE_PROPERTY_LISTENER
+    private boolean updateRegistration(int localFieldId, Object observable,
+            CreateWeakListener listenerCreator) {
+        WeakListener listener = mLocalFieldObservers[localFieldId];
+        if (listener == null) {
+            registerTo(localFieldId, observable, listenerCreator);
+            return true;
+        }
+        ....
+        return true;
+    }
+    
+    protected void registerTo(int localFieldId, Object observable,
+            CreateWeakListener listenerCreator) {
+        WeakListener listener = mLocalFieldObservers[localFieldId];
+        if (listener == null) {
+            // 这里调用CREATE_PROPERTY_LISTENER创建一个WeakPropertyListener
+            listener = listenerCreator.create(this, localFieldId);
+            mLocalFieldObservers[localFieldId] = listener;
+            if (mLifecycleOwner != null) {
+                // 设置lifecycle
+                listener.setLifecycleOwner(mLifecycleOwner);
+            }
+        }
+        // 将WeakPropertyListener与observable即VideoBean绑定
+        listener.setTarget(observable);
+    }
+}
+```
+
+先看看WeakListener 的setTarget做了什么
+
+```java
+private static class WeakListener<T> extends WeakReference<ViewDataBinding> {
+     private final ObservableReference<T> mObservable;
+     public WeakListener(ViewDataBinding binder, int localFieldId, ObservableReference<T> observable) {
+         super(binder, sReferenceQueue);
+         mLocalFieldId = localFieldId;
+         mObservable = observable;
+     }
+     public void setTarget(T object) {
+        unregister();
+        mTarget = object;
+        if (mTarget != null) {
+            // 将我们的videoBean添加到mObservable
+            mObservable.addListener(mTarget);
+        }
+    }
+    ....
+}
+```
+
+再看看WeakPropertyListener的构造函数
+
+```java
+private static class WeakPropertyListener extends Observable.OnPropertyChangedCallback implements ObservableReference<Observable> {
+       final WeakListener<Observable> mListener;
+        public WeakPropertyListener(ViewDataBinding binder, int localFieldId) {
+            mListener = new WeakListener<Observable>(binder, localFieldId, this);
+        }
+        // 这里的target即VideoBean
+        @Override
+        public void addListener(Observable target) {
+            target.addOnPropertyChangedCallback(this);
+        }
+}
+```
+
+WeakPropertyListener 把自己作为Observable传给父类作为mObservable，最终调用了VideoBean的addOnPropertyChangedCallback。
+
+即BaseObservable的addOnPropertyChangedCallback
+
+```java
+public class BaseObservable implements Observable {
+    private transient PropertyChangeRegistry mCallbacks;
+    @Override
+    public void addOnPropertyChangedCallback(@NonNull OnPropertyChangedCallback callback) {
+        ...
+        mCallbacks.add(callback);
+    }
+}
+```
+
+正是PropertyChangeRegistry的add将callback 添加到mCallbacks 里面
+
+```java
+public class CallbackRegistry<C, T, A> implements Cloneable {
+    public synchronized void add(C callback) {
+        int index = mCallbacks.lastIndexOf(callback);
+        if (index < 0 || isRemoved(index)) {
+            mCallbacks.add(callback);
+        }
+    }
+    ...
+}
+```
+
+所以 mCallbacks 存储了WeakPropertyListener的实例，那就看看WeakPropertyListener的onPropertyChanged实现
+
+```java
+private static class WeakPropertyListener ... {
+     @Override
+     public void onPropertyChanged(Observable sender, int propertyId) {
+         ViewDataBinding binder = mListener.getBinder();
+         if (binder == null) {
+            return;
+         }
+         Observable obj = mListener.getTarget();
+         if (obj != sender) {
+            return; // notification from the wrong object?
+         }
+         binder.handleFieldChange(mListener.mLocalFieldId, sender, propertyId);
+     }
+    ...
+}
+```
+
+最后通知到ViewDataBinding 刷新UI
+
+```java
+public abstract class ViewDataBinding ... {
+    ...
+    private void handleFieldChange(int mLocalFieldId, Object object, int fieldId) {
+        // 通知指定的属性变化
+        boolean result = onFieldChange(mLocalFieldId, object, fieldId);
+        if (result) {
+            // 属性有刷新，就更新UI
+            requestRebind();
+        }
+    }
+}
+```
+
+**有意思的是，如果fieldId 传的不对，还不会刷新UI了**
+
+且看onFieldChange 的实现
+
+```java
+public class ActivityMainBindingImpl extends ActivityMainBinding  {
+   ....
+   @Override
+    protected boolean onFieldChange(int localFieldId, Object object, int fieldId) {
+        switch (localFieldId) {
+            case 0 :
+                return onChangeVideo((com.example.databinding.VideoBean) object, fieldId);
+        }
+        return false;
+    }
+    // 关键实现，判断是否更新成功
+    // 这里只响应BR._all和BR.score
+    private boolean onChangeVideo(com.example.databinding.VideoBean Video, int fieldId) {
+        if (fieldId == BR._all) {
+            synchronized(this) {
+                    mDirtyFlags |= 0x1L;
+            }
+            return true;
+        }
+        else if (fieldId == BR.score) {
+            synchronized(this) {
+                    mDirtyFlags |= 0x2L;
+            }
+            return true;
+        }
+        return false;
+    }
+
+}
+```
+
+也就是说，如果我们在VideoBean调用notifyPropertyChanged的时候，如果传的是其他值，比如BR.video，就不会触发UI的刷新！！！
+
+```java
+public class VideoBean extends BaseObservable {
+    public void increaseScore(View view) {
+        score++;
+        // 传BR.video，将不会触发UI的刷新
+        notifyPropertyChanged(BR.video);
+    }
+}
+```
+
+为什么这么设计呢？
+
+还记得Bindable 注解吗，这个就是Bindable  注解的含义所在。
+
 # 后记
 
 viewBinding，DatatBinding与编译时注解有一点点类似，都是在编译的时候生成对应的模板代码，通过这种方式让我们免去写过多findViewById，和setText这种代码，同时也能帮我们解决异步更新ui的问题。但DatatBinding这种实现要依赖于Android Studio去实现模板代码。
 
-用DataBinding很容易的实现数据的双向绑定，也就是MVVM模式。但是里面还是有一定的学习成本，而且不方便debug，各取所需吧。
+用DataBinding很容易的实现数据的双向绑定，但是里面还是有一定的学习成本，而且不方便debug，各取所需吧。
 
 ——Weiwq  于 2021.10 广州
 
