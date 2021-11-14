@@ -42,7 +42,7 @@ android {
 ```
 ## 用法
 
-在创建xml文件后，Android Studio会自动创建对应的类，类名格式为：XML 文件的名称转换为驼峰式大小写，并在末尾添加“Binding”一词。
+在创建xml文件后，Android Studio会自动创建对应的类，类名格式为：XML 文件的名称转换为驼峰式大小写，并在末尾添加`Binding`一词。
 
 比如，创建了一个activity_view.xml
 
@@ -709,7 +709,7 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
 }
 ```
 
-其内部通过Choreographer 监听新一帧的刷新，触发UI的刷新（调用setText方法），这样有一个好处是，我们可以在子现场调用set方法更新bean数据。
+其内部通过Choreographer 监听新一帧的刷新，触发UI的刷新（调用setText方法），这样有一个好处是，我们可以在子线程调用set方法更新bean数据。
 
 ### 事件触发
 
@@ -798,7 +798,7 @@ public class CallbackRegistry<C, T, A> implements Cloneable {
 }
 ```
 
-mNotifier 是在构造函数出赋值的
+mNotifier 是在构造函数处赋值的
 
 ```java
 public class CallbackRegistry<C, T, A> implements Cloneable {
@@ -1018,6 +1018,8 @@ public abstract class ViewDataBinding ... {
     }
 }
 ```
+
+### 关于无法触发刷新UI
 
 **有意思的是，如果fieldId 传的不对，还不会刷新UI了**
 
