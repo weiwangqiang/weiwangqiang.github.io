@@ -205,10 +205,18 @@ Uptime: 5765033 Realtime: 5765033
 
 ### 2）systrace
 
-`systrace`需要Python环境， Android SDK 工具软件包中提供该命令，对应路径是 `android-sdk/platform-tools/systrace/` 语法如下：
+`systrace`需要Python环境，在使用前请先配置好adb，并连接上手机。
+
+window环境可以按照如下配置
+
+- python 2.7 环境：用 `py -2` 或者 `py -3` 切Python2和Python3
+- six模块：安装命令`py -2 -m pip install six`
+- win32con模块：安装命令`py -2 -m pip install pypiwin32`
+
+ Android SDK 工具软件包中提供该命令，对应路径是 `android-sdk/platform-tools/systrace/` 语法如下：
 
 ```java
-  python systrace.py [options] [categories]
+python systrace.py [options] [categories]
 ```
 
 可用参数如下
