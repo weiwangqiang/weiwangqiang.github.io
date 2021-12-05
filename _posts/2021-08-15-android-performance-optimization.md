@@ -205,6 +205,8 @@ Uptime: 5765033 Realtime: 5765033
 
 ### 2）systrace
 
+#### 基本用法
+
 `systrace`需要Python环境，在使用前请先配置好adb，并连接上手机。
 
 window环境可以按照如下配置
@@ -216,7 +218,7 @@ window环境可以按照如下配置
  Android SDK 工具软件包中提供该命令，对应路径是 `android-sdk/platform-tools/systrace/` 语法如下：
 
 ```java
-python systrace.py [options] [categories]
+python2 systrace.py [options] [categories]
 ```
 
 可用参数如下
@@ -250,6 +252,86 @@ chrome://tracing/
 - metrics栏可以查看各项指标。
 
 更多见[浏览systrace报告](https://developer.android.google.cn/topic/performance/tracing/navigate-report)
+
+#### GC
+
+在启动过程，要尽量减少 GC 的次数，避免造成主线程长时间的卡顿，特别是对 Dalvik 来说，我们可以通过 systrace 单独查看整个启动过程 GC 的时间。
+
+```java
+python2 ./systrace.py dalvik -b 90960 -a com.sample.gc
+```
+
+对于GC的使用含义，可以参考[调查RAM使用情况](http://developer.android.com/studio/profile/investigate-ram?hl=zh-cn)
+
+#### 自定义Trace
+
+Android在关键系统回调添加了Trace，但是我们无法通过systrace准确获取到项目代码的耗时情况，因此需要在关键位置打label。
+
+Android提供了`android.os.Trace#beginSection()` 和 `android.os.Trace#endSection` 这两个接口。比如想排查onCreate方法中，耗时的情况，可以通过如下代码实现
+
+```java
+class MainActivity : AppCompatActivity() {
+   override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        // 指定label为 "MainActivity_setContentView"
+        Trace.beginSection("MainActivity_setContentView")
+        method1()
+        method2()
+        Trace.endSection()
+    }
+    private fun method2() {
+        Thread.sleep(300)
+    }
+
+    private fun method1() {
+        Thread.sleep(200)
+    }
+}
+```
+
+**重点：**要想使用自定义Label，就必须在gradle中，打开debuggable
+
+```java
+  buildTypes {
+        debug {
+            debuggable true
+        }
+    }
+```
+
+执行systrace，其中`-a` 表示开启指定包自定义Trace label的功能
+
+```cmd
+$  python2 .\systrace.py -a com.example.asm
+```
+
+打开应用，进入指定页面后，退出systrace。用chrome打开trace.html 文件。如下所示，可以看到systrace对性能的影响很小。
+
+<img src="/img/blog_android_performance/20.png" width="100%" height="100%">
+
+但是由于开启了debuggable，与正式的release版本在性能上会有较大差异，如果我们想尽可能的还原真实情况，那必须在非debuggable模式下执行。我们可以通过如下方式绕过debuggable的限制
+
+```cmd
+
+public class BaseApplication extends Application {
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        try {
+            Class<?> trace = Class.forName("android.os.Trace");
+            Method setAppTracingAllowed = trace.getDeclaredMethod("setAppTracingAllowed", boolean.class);
+            setAppTracingAllowed.invoke(null, true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+**如果自定义label，再配上插桩，那就能最接近真实情况下，详细分析每个方法的耗时情况。**
+
+参考[手把手教你使用Systrace](https://zhuanlan.zhihu.com/p/27331842)
 
 ### 3）Perfetto
 
