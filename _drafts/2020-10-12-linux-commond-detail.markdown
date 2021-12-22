@@ -100,3 +100,10 @@ ln -fs  /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/loc
  ls -l /usr/local/bin/subl  
 ```
 
+查看进程信息
+比如查看Java应用程序的进程
+
+```cmd
+ps -ef | grep java
+```
+
