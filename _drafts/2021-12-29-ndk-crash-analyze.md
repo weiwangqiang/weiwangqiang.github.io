@@ -54,3 +54,8 @@ Usage: ./aarch64-linux-android-addr2line [option(s)] [addr(s)]
 $ aarch64-linux-android-addr2line -e path/to/so/demo.so 000000000000f423 000000000000f480
 ```
 
+## 2、ndk-stack
+
+```cmd
+ndk-stack -sym obj/armeabi-v7a -dump obj/armeabi-v7a/crash.log
+```

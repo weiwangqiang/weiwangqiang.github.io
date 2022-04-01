@@ -253,7 +253,7 @@ chrome://tracing/
 
 更多见[浏览systrace报告](https://developer.android.google.cn/topic/performance/tracing/navigate-report)
 
-#### GC
+#### 查看GC
 
 在启动过程，要尽量减少 GC 的次数，避免造成主线程长时间的卡顿，特别是对 Dalvik 来说，我们可以通过 systrace 单独查看整个启动过程 GC 的时间。
 
@@ -331,6 +331,8 @@ public class BaseApplication extends Application {
 
 **如果自定义label，再配上插桩，那就能最接近真实情况下，详细分析每个方法的耗时情况。**
 
+插桩实现和库可以参考[TraceFix](https://github.com/Gracker/TraceFix)
+
 参考[手把手教你使用Systrace](https://zhuanlan.zhihu.com/p/27331842)
 
 ### 3）Perfetto
@@ -348,7 +350,9 @@ systrace --from-file trace-file-name{.ctrace | .perfetto-trace}
 
 更多见[系统跟踪](https://developer.android.google.cn/topic/performance/tracing)
 
-### 4）Trace文件
+### 4）Debug接口
+
+#### 获取Trace文件
 
 Android为我们提供了Debug工具，可以获取指定路径的trace文件，我们只需要在特定的位置加入如下代码，即可获取对应的trace文件
 
@@ -364,7 +368,7 @@ Debug.stopMethodTracing();
 
 <img src="/img/blog_android_performance/18.png" width="100%" height="40%">
 
-### 5）Hprof文件
+#### 获取Hprof文件
 
 通过如下获取hprof文件，需要注意如下代码十分的耗性能
 
