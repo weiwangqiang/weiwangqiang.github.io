@@ -29,9 +29,11 @@ dependencies {
 
 在安装测试app后，点击leak的图标进入leak应用，点击`Dump Heap Now`即可，内存泄露引用链如下
 
-<center class="half">
-<img src="/img/blog_android_performance/10.png" width="35%" height="40%"/><img src="/img/blog_android_performance/9.png" width="35%" height="40%"/> 
+<center>
+<img  class="half" src="/img/blog_android_performance/10.png" width="35%" height="40%"/>
+<img  class="half" src="/img/blog_android_performance/9.png" width="35%" height="40%"/> 
 </center>
+
 
 
 ## 二、BlockCanary
@@ -139,7 +141,7 @@ profiler支持CPU、memory、network、energy维度的分析。
 
 ## 五、命令
 
-### 1）dumpsys meminfo
+### 1、dumpsys meminfo
 
 可以通过如下命令查看包为` com.example.kotlindemo`的内存信息（也可以查看PID对应的信息）
 
@@ -203,9 +205,9 @@ Uptime: 5765033 Realtime: 5765033
 - Java Heap：java堆大小。
 - `Objects` 中显示持有对象的个数，从这里我们可以分析view、activity的个数。其中，可以通过看activity的个数判断是否发生内存泄漏。
 
-### 2）systrace
+### 2、systrace
 
-#### 基本用法
+#### 2.1 基本用法
 
 `systrace`需要Python环境，在使用前请先配置好adb，并连接上手机。
 
@@ -253,7 +255,7 @@ chrome://tracing/
 
 更多见[浏览systrace报告](https://developer.android.google.cn/topic/performance/tracing/navigate-report)
 
-#### 查看GC
+#### 2.2 查看GC
 
 在启动过程，要尽量减少 GC 的次数，避免造成主线程长时间的卡顿，特别是对 Dalvik 来说，我们可以通过 systrace 单独查看整个启动过程 GC 的时间。
 
@@ -263,7 +265,7 @@ python2 ./systrace.py dalvik -b 90960 -a com.sample.gc
 
 对于GC的使用含义，可以参考[调查RAM使用情况](http://developer.android.com/studio/profile/investigate-ram?hl=zh-cn)
 
-#### 自定义Trace
+#### 2.3 自定义Trace
 
 Android在关键系统回调添加了Trace，但是我们无法通过systrace准确获取到项目代码的耗时情况，因此需要在关键位置打label。
 
@@ -335,7 +337,7 @@ public class BaseApplication extends Application {
 
 参考[手把手教你使用Systrace](https://zhuanlan.zhihu.com/p/27331842)
 
-### 3）Perfetto
+### 3、Perfetto
 
 Perfetto 是 Android 10 中引入的全新平台级跟踪工具，你可以在[perfetto界面](https://ui.perfetto.dev/#!/record)中打开这些跟踪
 
@@ -350,9 +352,9 @@ systrace --from-file trace-file-name{.ctrace | .perfetto-trace}
 
 更多见[系统跟踪](https://developer.android.google.cn/topic/performance/tracing)
 
-### 4）Debug接口
+### 4、Debug接口
 
-#### 获取Trace文件
+#### 4.1 获取Trace文件
 
 Android为我们提供了Debug工具，可以获取指定路径的trace文件，我们只需要在特定的位置加入如下代码，即可获取对应的trace文件
 
@@ -368,7 +370,7 @@ Debug.stopMethodTracing();
 
 <img src="/img/blog_android_performance/18.png" width="100%" height="40%">
 
-#### 获取Hprof文件
+#### 4.2 获取Hprof文件
 
 通过如下获取hprof文件，需要注意如下代码十分的耗性能
 
@@ -380,7 +382,7 @@ pull出来用Android studio打开如下
 
 <img src="/img/blog_android_performance/19.png" width="100%" height="40%">
 
-### 6）查看RAM
+### 5、查看RAM
 
 ```cmd
 $ cat /proc/meminfo | head -n 4
@@ -390,7 +392,7 @@ MemAvailable:    3392216 kB // 可用内存（即剩余运行内存）
 Buffers:         1049552 kB // 缓存
 ```
 
-### 7）查看CPU——top
+### 6、查看CPU——top
 
 ```cmd
 $ top
@@ -422,7 +424,7 @@ Swap:  2621436k total,   478088k used,  2143348k free,  1994168k cached
 - %CPU：即该进程占用的CPU占比。
 - %MEM ：即该进程占用的内存占比。
 
-### 8）查看CPU——dumpsys
+### 7、查看CPU——dumpsys
 
 可以查看每个进程所用的CPU百分比
 
@@ -437,7 +439,7 @@ CPU usage from 476124ms to 176038ms ago (2021-10-17 13:35:57.070 to 2021-10-17 1
 
 ## 六、GPU
 
-### 1）渲染速度
+### 1、渲染速度
 
 可以通过 设置-》开发者选项-》监控下的GPU呈现方式-》在`GPU 渲染模式分析`对话框中，选择`在屏幕上显示为竖条`
 
@@ -464,7 +466,7 @@ adb shell setprop debug.hwui.profile #{value}
 
 <img src="/img/blog_android_performance/14.png" width="100%" height="40%">
 
-### 3）过渡绘制
+### 2、过渡绘制
 
 可通过 设置-》开发者选项-》硬件加速渲染-》调试 GPU 过度绘制-》选择**显示过度绘制区域**。
 
