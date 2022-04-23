@@ -296,7 +296,7 @@ public abstract class ActivityMainBinding extends ViewDataBinding {
     this.bindText2 = bindText2;
   }
 
-  // 把data下的参数都声明了get/set方法
+  // 把布局文件中，<data> 下的参数都声明了get/set方法
   public abstract void setVideo(@Nullable VideoBean video);
 
   @Nullable
@@ -462,11 +462,11 @@ public class ActivityMainBindingImpl extends ActivityMainBinding  {
     // Inverse Binding Event Handlers
 
     public ActivityMainBindingImpl(@Nullable androidx.databinding.DataBindingComponent bindingComponent, @NonNull View root) {
-        // 通过mapBindings方法获取view的数组
+        // 重点！！！！, 这里通过mapBindings方法初始化view的数组
         this(bindingComponent, root, mapBindings(bindingComponent, root, 3, sIncludes, sViewsWithIds));
     }
     private ActivityMainBindingImpl(androidx.databinding.DataBindingComponent bindingComponent, View root, Object[] bindings) {
-        // 调用super即ActivityMainBinding的构造函数初始化view
+        // 调用super即ActivityMainBinding的构造函数，给ActivityMainBinding的view成员变量赋值
         super(bindingComponent, root, 0
             , (android.widget.TextView) bindings[1]
             , (android.widget.Button) bindings[2]
@@ -540,11 +540,24 @@ public class ActivityMainBindingImpl extends ActivityMainBinding  {
 }
 ```
 
-ActivityMainBindingImpl 在构造函数中，通过mapBindings函数初始化我们需要的view
+**初始化view的核心**：ActivityMainBindingImpl 在构造函数中，通过mapBindings函数初始化我们需要的view
 
 ```java
 public abstract class ViewDataBinding extends BaseObservable implements ViewBinding {
+      public static final String BINDING_TAG_PREFIX = "binding_";
       ....
+      // 参数 bindingComponent：与此绑定一起使用的绑定组件。
+      // 参数 root：即xml对应的根view
+      // 参数 numBindings: 要绑定的view数
+      // 参数 includes：包含布局信息，由它们的容器索引索引。
+      // 参数 viewsWithIds：没有标签但有 ID 的视图索引。
+      protected static Object[] mapBindings(DataBindingComponent bindingComponent, View root,
+          int numBindings, IncludedLayouts includes, SparseIntArray viewsWithIds) {
+          Object[] bindings = new Object[numBindings];
+          mapBindings(bindingComponent, root, bindings, includes, viewsWithIds, true);
+          return bindings;
+      }
+    
       private static void mapBindings(DataBindingComponent bindingComponent, View view,
             Object[] bindings, IncludedLayouts includes, SparseIntArray viewsWithIds,
             boolean isRoot) {
@@ -557,10 +570,12 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
         final String tag = (objTag instanceof String) ? (String) objTag : null;
         boolean isBound = false;
         if (isRoot && tag != null && tag.startsWith("layout")) {
+            // view的tag是layout开头，则表示为根布局
             final int underscoreIndex = tag.lastIndexOf('_');
             if (underscoreIndex > 0 && isNumeric(tag, underscoreIndex + 1)) {
+                // 解析tag中末尾的下标，这里的tag是 layout/activity_main_0
                 final int index = parseTagInt(tag, underscoreIndex + 1);
-                // 这里的index为0，即给0下标赋值为rootView
+                // 解析出的index为0，即给0下标赋值为rootView
                 if (bindings[index] == null) {
                     bindings[index] = view;
                 }
@@ -571,7 +586,7 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
             }
         } else if (tag != null && tag.startsWith(BINDING_TAG_PREFIX)) {
             // child view的tag为"binding_1"、"binding_2"....
-            // 解析该view所属的下标
+            // 通过tag最后的数字，确定view在数组中的下标
             int tagIndex = parseTagInt(tag, BINDING_NUMBER_START);
             if (bindings[tagIndex] == null) {
                 bindings[tagIndex] = view;
@@ -597,6 +612,10 @@ public abstract class ViewDataBinding extends BaseObservable implements ViewBind
     }    
 }
 ```
+
+小结起来就是：
+
+**获取view的tag来区分layout和要绑定的view，再通过tag最后的数字来确定view在view数组的下标，通过遍历child，来获取view对象。**
 
 可以看到，dataBinding在初始化view的时候，相对来说比viewBinding要费事一些，它需要不断的递归遍历所有的view。
 
