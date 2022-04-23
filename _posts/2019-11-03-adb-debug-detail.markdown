@@ -353,7 +353,19 @@ adb shell ls ls system/bin
 | stop                                 | 停止执行设备。                                               |
 | sqlite3                              | 启动 `sqlite3` 命令行程序。`sqlite3` 工具包含用于输出表格内容的 `.dump` 以及用于输出现有表格的 SQL CREATE 语句的 `.schema` 等命令。您也可以随时执行 SQLite 命令。SQLite3 数据库存储在文件夹 `/data/data/package_name/databases/` 中。例如：<br>adb -s emulator-5554 shell<br>sqlite3 /data/data/com.example.app/databases/rssitems.db<br>SQLite version 3.3.12<br>Enter ".help" for instructions |
 
+4）打开Wi-Fi连接
 
+在用USB连接设备后，执行如下命令，其中 5555 为端口，可以替换成其他的
+
+```java
+adb tcpip 5555 
+```
+
+到设置中查看IP（比如172.18.88.22），然后连接该设备
+
+```java
+adb connect 172.18.88.22:5555
+```
 
 # 9、后记
 
