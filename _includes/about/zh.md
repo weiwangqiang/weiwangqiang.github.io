@@ -5,7 +5,7 @@ Hey，我是韦王强，小鮮肉一枚，多出没于[Github](http://github.com
 
 职业是软件攻城狮，目前在 [cvte](http://cvte.com) 从事TV应用层的开发，曾经在[触宝](http://www.chubao.cn/home)实习，业余玩玩Python、java后端、ES、flutter和web前端。哦，还有微信小程序，无他，就做做小破站，体验一下全栈的成就感。当然，主营还是Android开发。
 
-毕业于[江苏大学](http://www.ujs.edu.cn/)，本科专业是电子信息。好吧，我没有走本科专业，大二就开始从ee转到cs，大学中一直跟着做项目。
+毕业于[江苏大学](http://www.ujs.edu.cn/)，本科专业是电子信息工程。好吧，我没有走本科专业，大二就开始从EE转到SE，大学中一直跟着做项目。
 
 一些作品和开源项目，👉 戳 [github](http://github.com/weiwangqiang)
 
