@@ -12,7 +12,7 @@ tags:
 
 ---
 
-> “本文基于Android12源码，分析Input系统的anr实现原理“
+> “本文基于Android13源码，分析Input系统的anr实现原理“
 ## anr 分类
 
 首先简单描述一下anr的分类：
@@ -36,20 +36,37 @@ Inputreader主要的作用是：
 - 将事件添加到mInboundQueue队列尾部。
 - KeyboardInputMapper.processKey()的过程, 记录下按下down事件的时间点。
 
-![](img/blog_activity_anr/1.jpg)
+![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/1.jpg)
+
+### InputDispatcher
+
+Inputdispatcher中，在线程里面调用到dispatchOnce方法，该方法中主要做：
+
+- 通过dispatchOnceInnerLocked()，取出mInboundQueue 里面的 EventEntry事件
+- 通过enqueueDispatchEntryLocked()，生成事件DispatchEntry并加入connection的`outbound`队列。
+- 通过startDispatchCycleLocked()，从outboundQueue中取出事件DispatchEntry, 重新放入connection的`waitQueue`队列。
+- 通过runCommandsLockedInterruptable()，遍历mCommandQueue队列，依次处理所有命令。
+- 通过processAnrsLocked()，判断是否需要触发ANR。
+- 在startDispatchCycleLocked()里面，通过inputPublisher.publishKeyEvent() 方法将按键事件分发给java层。publishKeyEvent的实现是在[InputTransport.cpp](http://aospxref.com/android-12.0.0_r3/xref/frameworks/native/libs/input/InputTransport.cpp) 中
+
+通过上面的分析，可以知道按键事件主要存储在3个queue中：
+
+1. InputDispatcher的mInboundQueue：存储的是从InputReader 送来的输入事件。
+2. Connection的outboundQueue：该队列是存储即将要发送给应用的输入事件。
+3. Connection的waitQueue：队列存储的是已经发给应用的事件，但是应用还未处理完成的。
+
+![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/3.png)
 
 
 
+## 代码分析 
 
+dispatchOnceInnerLocked：从mInboundQueue 中取出mPendingEvent，然后通过mPendingEvent的type决定事件类型和分发方式。比如当前是key类型，
 
-
-
-## 代码分析
-
-如果小伙伴不想看代码，可以直接跳到 **Input 系统流程**
+最后如果处理了事件，就处理相关的回收
 
 参考文献：
 
 - [Input系统—ANR原理分析](http://gityuan.com/2017/01/01/input-anr/)
-- 
+- [Android input anr 分析](https://zhuanlan.zhihu.com/p/53331495)
 
