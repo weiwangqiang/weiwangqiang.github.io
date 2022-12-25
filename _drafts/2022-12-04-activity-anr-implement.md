@@ -354,6 +354,8 @@ void InputDispatcher::postCommandLocked(Command&& command) {
 }
 ```
 
+## ANR检测
+
 ### processAnrsLocked
 
 该方法是用于检查队列中是否有太旧的事件，如果存在就触发ANR
@@ -367,7 +369,6 @@ nsecs_t InputDispatcher::processAnrsLocked() {
     // 检查我们是否正在等待一个聚焦窗口出现。如果等待时间过长就报 ANR
     if (mNoFocusedWindowTimeoutTime.has_value() && mAwaitedFocusedApplication != nullptr) {
         if (currentTime >= *mNoFocusedWindowTimeoutTime) {
-            // 已经超时
             processNoFocusedWindowAnrLocked();
             mAwaitedFocusedApplication.reset();
             mNoFocusedWindowTimeoutTime = std::nullopt;
@@ -403,8 +404,10 @@ nsecs_t InputDispatcher::processAnrsLocked() {
 
 onAnrLocked 有两种实现：1）能找到当前focus的window，2）找不到当前focus的window，但是可以找到当前前台应用。
 
+我们在processAnrsLocked 能找到对应的window，所以先看情况1
+
 ```java
-// 能找到window的情况
+//情况1、 能找到window的情况
 void InputDispatcher::onAnrLocked(const sp<Connection>& connection) {
     // 由于我们允许策略延长超时，因此 waitQueue 可能已经再次正常运行。在这种情况下不要触发 ANR
     if (connection->waitQueue.empty()) {
@@ -433,7 +436,7 @@ void InputDispatcher::onAnrLocked(const sp<Connection>& connection) {
     cancelEventsForAnrLocked(connection);
 }
 
-// 找不到focus的window，但是找到当前获取input事件的应用。
+//情况2、 找不到focus的window，但是找到当前获取input事件的应用。
 void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
     std::string reason =
             StringPrintf("%s does not have a focused window", application->getName().c_str());
@@ -443,6 +446,7 @@ void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> applic
         scoped_unlock unlock(mLock);
         mPolicy->notifyNoFocusedWindowAnr(application);
     };
+    // 将anr的命令添加到 mCommandQueue 中
     postCommandLocked(std::move(command));
 }
 ```
@@ -469,9 +473,82 @@ void InputDispatcher::updateLastAnrStateLocked(const std::string& windowLabel,
 }
 ```
 
-### dumpDispatchStateLocked
+dumpDispatchStateLocked 函数主要打印当前window和事件队列信息。执行`dumpsys input` 命令，dumpDispatchStateLocked函数输出的内容如下：
+
+```java
+Input Dispatcher State:
+  DispatchEnabled: true
+  DispatchFrozen: false
+  InputFilterEnabled: false
+  FocusedDisplayId: 0
+  FocusedApplications: // 当前获取焦点的应用
+    displayId=0, name='ActivityRecord{552864 u0 com.example.anrdemo/.MainActivity t182}', dispatchingTimeout=5000ms
+  FocusedWindows:
+    displayId=0, name='Window{cf1eda9 u0 com.example.anrdemo/com.example.anrdemo.MainActivity}'
+  TouchStates: <no displays touched>
+  Display: 0
+    Windows:
+    ....
+  Global monitors in display 0:
+    0: 'PointerEventDispatcher0 (server)',
+  RecentQueue: length=10 //近调度或删除的事件（从最旧到最新）。
+    ....
+  PendingEvent: <none> // 当前正在调度转储事件。
+  InboundQueue: <empty> // Inbound 队列
+  ReplacedKeys: <empty>
+  Connections:
+    317: channelName='cf1eda9 com.example.anrdemo/com.example.anrdemo.MainActivity (server)', windowName='cf1eda9 com.example.anrdemo/com.example.anrdemo.MainActivity (server)', status=NORMAL, monitor=false, responsive=true
+      OutboundQueue: <empty>
+      WaitQueue: length=4
+        MotionEvent(deviceId=9, source=0x00001002, displayId=0, action=DOWN, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=22.8, yPrecision=10.8, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (700.0, 1633.9)]), policyFlags=0x62000000, targetFlags=0x00000105, resolvedAction=0, age=4129ms, wait=4128ms
+        MotionEvent(deviceId=9, source=0x00001002, displayId=0, action=UP, actionButton=0x00000000, flags=0x00000000, metaState=0x00000000, buttonState=0x00000000, classification=NONE, edgeFlags=0x00000000, xPrecision=22.8, yPrecision=10.8, xCursorPosition=nan, yCursorPosition=nan, pointers=[0: (700.0, 1633.9)]), policyFlags=0x62000000, targetFlags=0x00000105, resolvedAction=1, age=4011ms, wait=4010ms
+        ....
+  AppSwitch: not pending
+  Configuration:
+    KeyRepeatDelay: 50ms
+    KeyRepeatTimeout: 400m
+```
+
+从上面可以看到InboundQueue，OutboundQueue，WaitQueue 3个Queue的状态。其中WaitQueue的size为4，即两对点击事件在等待`com.example.anrdemo`消费。    
+
+### notifyNoFocusedWindowAnr
+
+在调用完updateLastAnrStateLocked 后，在执行command的时候，调用到 mPolicy->notifyNoFocusedWindowAnr
+
+```java
+void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
+    ....
+    auto command = [this, application = std::move(application)]() REQUIRES(mLock) {
+        scoped_unlock unlock(mLock);
+        mPolicy->notifyNoFocusedWindowAnr(application);
+    };
+}
+```
+
+而mPolicy对象是InputDispatcherPolicyInterface 类的实例
+
+### InputDispatcherPolicyInterface#notifyNoFocusedWindowAnr
 
 
+
+### cancelEventsForAnrLocked
+
+cancelEventsForAnrLocked方法用于停止唤醒此连接上的事件，这些事件已经没有响应。
+
+```java
+void InputDispatcher::cancelEventsForAnrLocked(const sp<Connection>& connection) {
+    // 我们不会在这里中断任何连接，即使策略希望我们中止调度。如果策略决定关闭应用，
+    // 我们将通过 unregisterInputChannel 获取通道删除事件，并以这种方式清理连接。
+    // 当连接阻塞时，我们已经没有向连接发送新的指针，但重点事件将继续堆积。
+    ALOGW("Canceling events for %s because it is unresponsive",
+          connection->inputChannel->getName().c_str());
+    if (connection->status == Connection::Status::NORMAL) {
+        CancelationOptions options(CancelationOptions::CANCEL_ALL_EVENTS,
+                                   "application not responding");
+        synthesizeCancelationEventsForConnectionLocked(connection, options);
+    }
+}
+```
 
 
 
