@@ -511,23 +511,141 @@ Input Dispatcher State:
 
 从上面可以看到InboundQueue，OutboundQueue，WaitQueue 3个Queue的状态。其中WaitQueue的size为4，即两对点击事件在等待`com.example.anrdemo`消费。    
 
-### notifyNoFocusedWindowAnr
+### processConnectionUnresponsiveLocked
 
-在调用完updateLastAnrStateLocked 后，在执行command的时候，调用到 mPolicy->notifyNoFocusedWindowAnr
+在调用完updateLastAnrStateLocked 后，接着调用到processConnectionUnresponsiveLocked
 
 ```java
 void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
     ....
-    auto command = [this, application = std::move(application)]() REQUIRES(mLock) {
+    processConnectionUnresponsiveLocked(*connection, std::move(reason));
+    ....
+}
+
+// 该方法告诉策略连接已变得无响应，以便它可以启动 ANR。检查感兴趣的连接是监视器还是窗口，并将相应的命令条目添加到命令队列中。
+void InputDispatcher::processConnectionUnresponsiveLocked(const Connection& connection,
+                                                          std::string reason) {
+    const sp<IBinder>& connectionToken = connection.inputChannel->getConnectionToken();
+    .... 
+    sendWindowUnresponsiveCommandLocked(connectionToken, pid, std::move(reason));
+}
+
+void InputDispatcher::sendWindowUnresponsiveCommandLocked(const sp<IBinder>& token,
+                                                          std::optional<int32_t> pid,
+                                                          std::string reason) {
+    auto command = [this, token, pid, reason = std::move(reason)]() REQUIRES(mLock) {
         scoped_unlock unlock(mLock);
-        mPolicy->notifyNoFocusedWindowAnr(application);
+        mPolicy->notifyWindowUnresponsive(token, pid, reason);
     };
+    postCommandLocked(std::move(command));
 }
 ```
 
-而mPolicy对象是InputDispatcherPolicyInterface 类的实例
+sendWindowUnresponsiveCommandLocked 中将command添加到mCommandQueue队列后，最终调用到mPolicy的notifyWindowUnresponsive ，看InputDispatcher的头文件可以知道mPolicy是InputDispatcherPolicyInterface 接口的实现类，对应的实现类是NativeInputManager
 
-### InputDispatcherPolicyInterface#notifyNoFocusedWindowAnr
+## NativeInputManager
+
+NativeInputManager 类定义在com_android_server_input_InputManagerService.cpp中。
+
+```JAVA
+
+class NativeInputManager : public virtual RefBase,
+    public virtual InputReaderPolicyInterface,
+    public virtual InputDispatcherPolicyInterface,
+    public virtual PointerControllerPolicyInterface {
+  ....
+}
+```
+
+实现方法如下
+
+```java
+void NativeInputManager::notifyWindowUnresponsive(const sp<IBinder>& token,
+                                                  std::optional<int32_t> pid,
+                                                  const std::string& reason) {
+#if DEBUG_INPUT_DISPATCHER_POLICY
+    ALOGD("notifyWindowUnresponsive");
+#endif
+    ATRACE_CALL();
+
+    JNIEnv* env = jniEnv();
+    ScopedLocalFrame localFrame(env);
+
+    jobject tokenObj = javaObjectForIBinder(env, token);
+    ScopedLocalRef<jstring> reasonObj(env, env->NewStringUTF(reason.c_str()));
+    // 重点：这里调用到Java层的方法, 即InputManagerService的notifyWindowUnresponsive方法
+    env->CallVoidMethod(mServiceObj, gServiceClassInfo.notifyWindowUnresponsive, tokenObj,
+                        pid.value_or(0), pid.has_value(), reasonObj.get());
+    checkAndClearExceptionFromCallback(env, "notifyWindowUnresponsive");
+}
+
+```
+
+gServiceClassInfo 是一个结构体
+
+```java
+static struct {
+    jclass clazz;
+    jmethodID notifyWindowUnresponsive;
+    .... 
+} gServiceClassInfo;
+```
+
+对应的clazz初始化如下
+
+```java
+int register_android_server_InputManager(JNIEnv* env) {
+    // Callbacks
+    jclass clazz;
+    FIND_CLASS(clazz, "com/android/server/input/InputManagerService");
+    gServiceClassInfo.clazz = reinterpret_cast<jclass>(env->NewGlobalRef(clazz));
+    ....
+}
+```
+
+这样，anr的消息就抛到了java层的InputManagerService中
+
+## InputManagerService
+
+InputManagerService的notifyWindowUnresponsive方法实现如下，很简单，也是调用mWindowManagerCallbacks 做转发
+
+```java
+public class InputManagerService {
+     // Native callback
+     private void notifyWindowUnresponsive(IBinder token, int pid, boolean isPidValid,
+                                            String reason) {
+        mWindowManagerCallbacks.notifyWindowUnresponsive(token,
+                isPidValid ? OptionalInt.of(pid) : OptionalInt.empty(), reason);
+    } 
+}
+
+```
+
+mWindowManagerCallbacks 是一个WindowManagerCallbacks接口，对应实现类是InputManagerCallback
+
+在InputManagerCallback 中，将事件传给了WindowManagerService的mAnrController。
+
+```java
+final class InputManagerCallback implements InputManagerService.WindowManagerCallbacks {
+     private final WindowManagerService mService;
+  
+    @Override
+    public void notifyWindowUnresponsive(@NonNull IBinder token, @NonNull OptionalInt pid,
+            @NonNull String reason) {
+        mService.mAnrController.notifyWindowUnresponsive(token, pid, reason);
+    }
+}
+```
+
+## WindowManagerService
+
+
+
+```java
+public class WindowManagerService {
+      final AnrController mAnrController;
+}
+```
 
 
 
@@ -552,8 +670,9 @@ void InputDispatcher::cancelEventsForAnrLocked(const sp<Connection>& connection)
 
 
 
-参考文献：
+## 参考文献：
 
 - [Input系统—ANR原理分析](http://gityuan.com/2017/01/01/input-anr/)
 - [Android input anr 分析](https://zhuanlan.zhihu.com/p/53331495)
+- [【CSDN】源码剖析Android  anr机制](https://blog.csdn.net/xt_xiaotian/article/details/121250498)
 
