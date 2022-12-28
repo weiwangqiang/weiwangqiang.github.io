@@ -637,13 +637,361 @@ final class InputManagerCallback implements InputManagerService.WindowManagerCal
 }
 ```
 
-## WindowManagerService
+## AnrController
 
-
+>  services/core/java/com/android/server/wm/AnrController.java
 
 ```java
-public class WindowManagerService {
-      final AnrController mAnrController;
+// 通知由其输入令牌标识的窗口无响应。 @return 如果窗口由给定的输入令牌标识并且请求已处理，则返回 true，否则返回 false。
+private boolean notifyWindowUnresponsive(@NonNull IBinder inputToken, String reason) {
+        preDumpIfLockTooSlow();
+        final int pid;
+        final boolean aboveSystem;
+        final com.android.server.wm.ActivityRecord activity;
+        synchronized (mService.mGlobalLock) {
+            com.android.server.wm.InputTarget target = mService.getInputTargetFromToken(inputToken);
+            if (target == null) {
+                return false;
+            }
+            WindowState windowState = target.getWindowState();
+            pid = target.getPid();
+            // Blame the activity if the input token belongs to the window. If the target is
+            // embedded, then we will blame the pid instead.
+            // 如果输入令牌属于窗口，则归咎于活动。如果目标是嵌入式的，那么我们就会责怪 pid。
+            activity = (windowState.mInputChannelToken == inputToken)
+                    ? windowState.mActivityRecord : null;
+            Slog.i(TAG_WM, "ANR in " + target + ". Reason:" + reason);
+            aboveSystem = isWindowAboveSystem(windowState);
+            dumpAnrStateLocked(activity, windowState, reason);
+        }
+        if (activity != null) {
+            // 能找到当前window对应的activityRecord
+            activity.inputDispatchingTimedOut(reason, pid);
+        } else {
+            mService.mAmInternal.inputDispatchingTimedOut(pid, aboveSystem, reason);
+        }
+        return true;
+    }
+```
+
+我们先看能找到activityRecord的情况
+
+### ActivityRecord
+
+```java
+> services/core/java/com/android/server/wm/ActivityRecord.java
+ 
+// 当输入分派到与应用程序窗口容器关联的窗口超时时调用。
+ public boolean inputDispatchingTimedOut(String reason, int windowPid) {
+        ActivityRecord anrActivity;
+        boolean blameActivityProcess;
+        synchronized (mAtmService.mGlobalLock) {
+            // 找到anr的activity
+            anrActivity = getWaitingHistoryRecordLocked();
+            ...
+        }
+        if (blameActivityProcess) {
+          
+            return mAtmService.mAmInternal.inputDispatchingTimedOut(anrApp.mOwner,
+                    anrActivity.shortComponentName, anrActivity.info.applicationInfo,
+                    shortComponentName, app, false, reason);
+        }
+       ....
+ }
+```
+
+inputDispatchingTimedOut 方法最后调用到ActivityManagerInternal的inputDispatchingTimedOut
+
+```java
+> services/core/java/com/android/server/am/ActivityManagerService.java
+  
+public final class LocalService extends ActivityManagerInternal {
+  
+        @Override
+        public boolean inputDispatchingTimedOut(....) {
+            return ActivityManagerService.this.inputDispatchingTimedOut(....);
+        }
+}
+```
+
+接着来到了ActivityManagerService的inputDispatchingTimedOut
+
+```java
+> services/core/java/com/android/server/am/ActivityManagerService.java
+  
+public class ActivityManagerService {
+    // 处理输入调度超时。
+    boolean inputDispatchingTimedOut(ProcessRecord proc, ... String reason) {
+        if (reason == null) {
+            annotation = "Input dispatching timed out";
+        } else {
+            annotation = "Input dispatching timed out (" + reason + ")";
+        }
+        ....
+        mAnrHelper.appNotResponding(proc, activityShortComponentName, aInfo,
+                    parentShortComponentName, parentProcess, aboveSystem, annotation);
+    }
+}
+```
+
+AnrHelper.appNotResponding方法实现如下
+
+```java
+> services/core/java/com/android/server/am/AnrHelper.java
+  
+    void appNotResponding(com.android.server.am.ProcessRecord anrProcess, String activityShortComponentName,
+                          ApplicationInfo aInfo, String parentShortComponentName,
+                          WindowProcessController parentProcess, boolean aboveSystem, String annotation) {
+        final int incomingPid = anrProcess.mPid;
+        synchronized (mAnrRecords) {
+            ....
+            // 将anr信息添加到list中
+            mAnrRecords.add(new AnrRecord(anrProcess, activityShortComponentName ....));
+        }
+        // 启动anr检查线程
+        startAnrConsumerIfNeeded();
+    }
+  
+    private void startAnrConsumerIfNeeded() {
+        if (mRunning.compareAndSet(false, true)) {
+            new AnrConsumerThread().start();
+        }
+    }
+```
+
+AnrConsumerThread 定义如下，该线程主要是遍历mAnrRecords，然后调用AnrRecord的appNotResponding方法。
+
+```java
+> services/core/java/com/android/server/am/AnrHelper.java
+   
+  private class AnrConsumerThread extends Thread {
+        .... 
+        @Override
+        public void run() {
+            AnrRecord r;
+            while ((r = next()) != null) {
+                ....
+                // 是否要求仅转储自身
+                final boolean onlyDumpSelf = reportLatency > EXPIRED_REPORT_TIME_MS;
+                r.appNotResponding(onlyDumpSelf);
+                .....
+            }
+        }
+    }
+```
+
+AnrRecord 实现如下
+
+```java
+> services/core/java/com/android/server/am/AnrHelper.java
+  
+private static class AnrRecord {
+        final com.android.server.am.ProcessRecord mApp;
+        void appNotResponding(boolean onlyDumpSelf) {
+            mApp.mErrorState.appNotResponding(mActivityShortComponentName, mAppInfo,
+                    mParentShortComponentName, mParentProcess, mAboveSystem, mAnnotation,
+                    onlyDumpSelf);
+        }
+}
+```
+
+mErrorState 是 ProcessErrorStateRecord 类的实例。
+
+appNotResponding方法很长，主要做
+
+- 将 ANR 记录到主日志中。
+- 转储堆栈信息到跟踪文件中
+- 发起弹出anr消息
+
+```JAVA
+> services/core/java/com/android/server/am/ProcessErrorStateRecord.java
+
+void appNotResponding(String activityShortComponentName, ApplicationInfo aInfo ...) {
+        ....
+        synchronized (mService) {
+           // 如果是后台anr，就直接kill掉app，并打印原因
+            if (isSilentAnr() && !mApp.isDebugging()) {
+                mApp.killLocked("bg anr", ApplicationExitInfo.REASON_ANR, true);
+                return;
+            }
+            synchronized (mProcLock) {
+                // 设置app的notResponding状态，并查找errorReportReceiver
+                makeAppNotRespondingLSP(activityShortComponentName,
+                        annotation != null ? "ANR " + annotation : "ANR", info.toString());
+                mDialogController.setAnrController(anrController);
+            }
+            if (mService.mUiHandler != null) {
+                // 调出臭名昭著的 App Not Responding 对话框
+                Message msg = Message.obtain();
+                msg.what = ActivityManagerService.SHOW_NOT_RESPONDING_UI_MSG;
+                msg.obj = new AppNotRespondingDialog.Data(mApp, aInfo, aboveSystem);
+                mService.mUiHandler.sendMessageDelayed(msg, anrDialogDelayMs);
+            }
+        }
+}
+```
+
+mUiHandler 是Activity Manager Service中的handler，其实现如下
+
+```java
+> services/core/java/com/android/server/am/ActivityManagerService.java
+  
+final class UiHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                .....
+                case SHOW_NOT_RESPONDING_UI_MSG: {
+                   // 处理显示ANR对话框的消息
+                    mAppErrors.handleShowAnrUi(msg);
+                } break;
+            }
+        }
+}
+```
+
+handleShowAnrUi对应实现如下，主要用于判断是否需要显示ANR对话框
+
+```java
+> services/core/java/com/android/server/am/AppErrors.java
+
+void handleShowAnrUi(Message msg) {
+   final ProcessErrorStateRecord errState = proc.mErrorState;
+   synchronized (mProcLock) {
+            if (errState.getDialogController().hasAnrDialogs()) {
+                // 已经显示ANR对话框，就直接return
+                MetricsLogger.action(mContext, MetricsProto.MetricsEvent.ACTION_APP_ANR,
+                        AppNotRespondingDialog.ALREADY_SHOWING);
+                return;
+            }
+            // 满足弹出ANR对话框的条件
+            if (mService.mAtmInternal.canShowErrorDialogs() || showBackground) {
+                 ....
+                 // 调用controler 显示对话框
+                 errState.getDialogController().showAnrDialogs(data);
+            } 
+            ...
+        }
+}
+```
+
+ProcessErrorStateRecord#getDialogController() 方法返回ErrorDialogController 对象
+
+```java
+> services/core/java/com/android/server/am/ErrorDialogController.java
+  
+void showAnrDialogs(AppNotRespondingDialog.Data data) {
+     List<Context> contexts = getDisplayContexts(
+             mApp.mErrorState.isSilentAnr() /* lastUsedOnly */);
+     mAnrDialogs = new ArrayList<>();
+     for (int i = contexts.size() - 1; i >= 0; i--) {
+         final Context c = contexts.get(i);
+         // 创建新的ANR 对话框，AppNotRespondingDialog 即为我们见到的anr对话框
+         mAnrDialogs.add(new AppNotRespondingDialog(mService, c, data));
+     }
+     // 显示dialog
+     scheduleForAllDialogs(mAnrDialogs, Dialog::show);
+}
+
+void scheduleForAllDialogs(List<? extends BaseErrorDialog> dialogs,
+          Consumer<BaseErrorDialog> c) {
+     mService.mUiHandler.post(() -> {
+         if (dialogs != null) {
+             forAllDialogs(dialogs, c);
+         }
+     });
+ }
+// 遍历 dialog列表，调用show方法
+void forAllDialogs(List<? extends BaseErrorDialog> dialogs, Consumer<BaseErrorDialog> c) {
+     for (int i = dialogs.size() - 1; i >= 0; i--) {
+         c.accept(dialogs.get(i));
+     }
+}
+```
+
+### 调用堆栈
+
+```java
+-> services/core/java/com/android/server/am/ProcessErrorStateRecord.java : appNotResponding()
+-> services/core/java/com/android/server/am/ActivityManagerService.java : UiHandler#SHOW_NOT_RESPONDING_UI_MSG
+-> services/core/java/com/android/server/am/AppErrors.java : handleShowAnrUi()
+-> services/core/java/com/android/server/am/ErrorDialogController.java : showAnrDialogs()
+-> services/core/java/com/android/server/am/AppNotRespondingDialog.java : show()
+```
+
+## AppNotRespondingDialog
+
+ANR对话框的实现如下
+
+```java
+> services/core/java/com/android/server/am/AppNotRespondingDialog.java
+  
+final class AppNotRespondingDialog extends BaseErrorDialog implements View.OnClickListener {
+    ....
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case com.android.internal.R.id.aerr_report:
+                 // 点击了等待并且上报，该按钮只有在有ErrorReportReceiver的时候才显示
+                mHandler.obtainMessage(WAIT_AND_REPORT).sendToTarget();
+                break;
+            case com.android.internal.R.id.aerr_close:
+                // 将app杀死
+                mHandler.obtainMessage(FORCE_CLOSE).sendToTarget();
+                break;
+            case com.android.internal.R.id.aerr_wait:
+                // 继续等待
+                mHandler.obtainMessage(WAIT).sendToTarget();
+                break;
+            default:
+                break;
+        }
+    }
+  
+    private final Handler mHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case FORCE_CLOSE:
+                    // 调用ActivityManagerService的killAppAtUsersRequest方法，将app kill掉
+                    mService.killAppAtUsersRequest(mProc);
+                    break;
+                case WAIT_AND_REPORT:
+                case WAIT:
+                    // 继续等待应用
+                    synchronized (mService) {
+                        ProcessRecord app = mProc;
+                        final ProcessErrorStateRecord errState = app.mErrorState;
+                        if (msg.what == WAIT_AND_REPORT) {
+                            appErrorIntent = mService.mAppErrors.createAppErrorIntentLOSP(app,
+                                    System.currentTimeMillis(), null);
+                        }
+
+                        synchronized (mService.mProcLock) {
+                            // 清除anr的标识位
+                            errState.setNotResponding(false);
+                            // 退出对话框
+                            errState.getDialogController().clearAnrDialogs();
+                        }
+                        // 重新计算service anr的时间
+                        mService.mServices.scheduleServiceTimeoutLocked(app);
+                        // If the app remains unresponsive, show the dialog again after a delay.
+                        mService.mInternal.rescheduleAnrDialog(mData);
+                    }
+                    break;
+            }
+
+            if (appErrorIntent != null) {
+                try {
+                    getContext().startActivity(appErrorIntent);
+                } catch (ActivityNotFoundException e) {
+                    Slog.w(TAG, "bug report receiver dissappeared", e);
+                }
+            }
+
+            dismiss();
+        }
+    };
+
 }
 ```
 
