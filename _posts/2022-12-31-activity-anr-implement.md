@@ -1,81 +1,69 @@
 ---
 layout:     post
-title:      "Activity anr原理分析"
-subtitle:   " \"从点击事件卡顿到显示ANR对话框，你知道Android都做了哪些工作吗？\""
-date:       2021-12-29 13:30:00
+title:      "带你细看Android input系统中ANR的机制"
+subtitle:   " \"从点击事件卡顿，到显示 Application not responding 对话框，你知道Android都做了哪些工作吗？\""
+date:       2022-12-31 23:30:00
 author:     "Weiwq"
-header-img: "img/background/home-bg-o.jpg"
+header-img: "img/background/post-bg-nextgen-web-pwa.jpg"
 catalog:  true
-top: false
+isTop:  true
 tags:
-    - Android
+   - Android
+
 ---
 
-> “本文基于Android13源码，分析Input系统的anr实现原理“
-## 源码列表
+> “本文基于Android13源码，分析Input系统的Anr实现原理“
 
-  主要涉及到的源码
 
-```java
-frameworks/native/services/inputflinger/dispatcher/
-    - InputDispatcher.cpp
-    - Connection.cpp
-    - EventHub.cpp
-    
-frameworks/native/services/inputflinger/reader/
-    - InputReader.cpp
-    - InputDevice.cpp
-    - mapper/KeyboardInputMapper.cpp
+# 前言
 
-```
+在文章之前，先提几个问题：
 
-## anr 分类
+- 如果在activity任意周期（onCreate,onResume等），同步执行耗时超过5s（ANR时间）的任务，期间不进行点击，那会触发ANR吗？
+- 如果在button点击的时候，在onClick回调同步执行耗时超过5s的任务。点击一次会触发ANR吗？点击2次呢，3次呢？
 
-首先简单描述一下anr的分类：
-- Input ANR：按键或触摸事件在5s内没有相应，常发生在activity中。
-- Service anr：前台service 响应时间是20s，后台service是200s；startForground超时是5s。
+# 1、anr 分类
+
+首先看一下anr的分类：
+- Input ANR：按键或触摸事件在5s内没有相应，主要在activity、fragment中。
+- Service anr：前台service 响应时间是20s，后台service是200s。
 - Broadcast anr：前台广播是10s，后台广播是60s。
 - ContentProvider anr：publish执行未在10s内完成。
 - startForgoundService：应用调用startForegroundService，然后5s内未调用startForeground出现ANR或者Crash
 
-有些小伙伴可能好奇，为啥没有Activity ANR的分类？Activity ANR准确的来说是——Input系统检测，触发activity 的anr。所以本文将通过input系统是如何触发activity发生anr的。
+有些小伙伴可能好奇，为啥没有Activity ANR的分类？Activity ANR准确的来说是——Input系统检测，触发activity 的anr。所以本文将通过input系统来讲述Android是如何触发activity的anr。
 
-### InputReader
+# 2、InputDispatcher
 
-Inputreader主要的作用是：
-
-- 读取节点/dev/input，将Input_event 结构体转成相应的EventEntry，比如按键事件对应KeyEntry，触摸事件对应MotionEntry
-- 将事件添加到mInboundQueue队列尾部。
-- KeyboardInputMapper.processKey()的过程, 记录下按下down事件的时间点。
-
-![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/1.jpg)
-
-## InputDispatcher
+在了解Input Anr 原理之前，我们简单了解一下InputDispatcher是如何分发按键事件的。
 
 Inputdispatcher中，在线程里面调用到dispatchOnce方法，该方法中主要做：
 
 - 通过dispatchOnceInnerLocked()，取出mInboundQueue 里面的 EventEntry事件
 - 通过enqueueDispatchEntryLocked()，生成事件DispatchEntry并加入connection的`outbound`队列。
-- 通过startDispatchCycleLocked()，从outboundQueue中取出事件DispatchEntry, 重新放入connection的`waitQueue`队列。
-- 通过runCommandsLockedInterruptable()，遍历mCommandQueue队列，依次处理所有命令。
+- 通过startDispatchCycleLocked()，从outboundQueue中取出事件DispatchEntry, 重新放入connection的`waitQueue`队列。同时通过inputPublisher.publishKeyEvent() 方法将按键事件分发给java层。
 - 通过processAnrsLocked()，判断是否需要触发ANR。
-- 在startDispatchCycleLocked()里面，通过inputPublisher.publishKeyEvent() 方法将按键事件分发给java层。publishKeyEvent的实现是在InputTransport.cpp 中
 
-通过上面的概括，可以知道按键事件主要存储在3个queue中：
+按键事件存储在3个queue中：
 
 1. InputDispatcher的mInboundQueue：存储的是从InputReader 送来的输入事件。
 2. Connection的outboundQueue：该队列是存储即将要发送给应用的输入事件。
 3. Connection的waitQueue：队列存储的是已经发给应用的事件，但是应用还未处理完成的。
 
-![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/3.png)
+![](\img/blog_activity_anr/3.png)
 
-### dispatchOnce
+## 2.1 dispatchOnce
 
-dispatchOnce 中主要就是调用如下的两个方法，一个是事件分发，一个是检查ANR
+dispatchOnce() 中主要就是调用如下的两个方法：
+
+- 分发事件：dispatchOnceInnerLocked() 
+- 检查ANR：processAnrsLocked()
 
 ```java
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+
 void InputDispatcher::dispatchOnce() {
-    nsecs_t nextWakeupTime = LONG_LONG_MAX;
+    nsecs_t nextWakeupTime = LONG_LONG_MAX; 
     {
         ...
         // 如果没有挂起的命令，则运行调度循环。调度循环可能会将命令排入队列，以便稍后运行。
@@ -97,26 +85,22 @@ void InputDispatcher::dispatchOnce() {
 }
 ```
 
-我们先简单看看事件分发过程
+我们先简单回顾下事件分发过程
 
-## 事件分发
+# 3、事件分发
 
-dispatchOnce 中，通过调用dispatchOnceInnerLocked来分发事件
+## 3.1 dispatchOnceInnerLocked
 
-### dispatchOnceInnerLocked
+该方法主要是：
 
-dispatchOnceInnerLocked主要是：
+- 从mInboundQueue 中取出mPendingEvent
 
-1）从mInboundQueue 中取出mPendingEvent
-
-2）通过mPendingEvent的type决定事件类型和分发方式。比如当前是key类型。
-
-3）最后如果处理了事件，就处理相关的回收。
+- 通过mPendingEvent的type决定事件类型和分发方式。比如当前是key类型。
 
 主要代码如下：
 
 ```java
-> services/inputflinger/dispatcher/InputDispatcher.cpp
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
 void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     nsecs_t currentTime = now();
@@ -126,112 +110,19 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     bool isAppSwitchDue = mAppSwitchDueTime <= currentTime;
     // 当前没有PendingEvent（即EventEntry），则取一个
     if (!mPendingEvent) {
-        // 1、mInboundQueue 为空
-        if (mInboundQueue.empty()) {
-            // 如果适用，合成键重复。
-            if (mKeyRepeatState.lastKeyEntry) {
-                if (currentTime >= mKeyRepeatState.nextRepeatTime) {
-                    mPendingEvent = synthesizeKeyRepeatLocked(currentTime);
-                }
-                ...
-            }
-            // 如果没有PendingEvent，就直接返回
-            if (!mPendingEvent) {
-                return;
-            }
-        } else {
-        // 2、mInboundQueue不为空 ，就从队列前面取一个PendingEvent
+         ...
+        //  mInboundQueue不为空 ，就从队列前面取一个PendingEvent
             mPendingEvent = mInboundQueue.front();
             mInboundQueue.pop_front();
             traceInboundQueueLengthLocked();
-        }
-        // Poke user activity for this event.
-        if (mPendingEvent->policyFlags & POLICY_FLAG_PASS_TO_USER) {
-            // 根据当前的event 类型，post 一个 command 到 mCommandQueue
-            pokeUserActivityLocked(*mPendingEvent);
-        }
     }
-    // 现在我们有一个事件要发送。所有事件最终都会以这种方式取消排队和处理，即使我们打算删除它们。
     ...
-    bool done = false;
-    DropReason dropReason = DropReason::NOT_DROPPED;
-    switch (mPendingEvent->type) {
-        ...
-        case EventEntry::Type::KEY: {
-            ...
-            // 最后会调用到dispatchEventLocked
-            done = dispatchKeyLocked(currentTime, keyEntry, &dropReason, nextWakeupTime);
-            break;
-        }
-        case EventEntry::Type::MOTION: {
-            ...
-            // 最后会调用到dispatchEventLocked
-            done = dispatchMotionLocked(currentTime, motionEntry, &dropReason, nextWakeupTime);
-            break;
-        }
-    }
-    if (done) { 
-        if (dropReason != DropReason::NOT_DROPPED) {
-            // 事件没有被丢弃。找到对应的原因并通知
-            dropInboundEventLocked(*mPendingEvent, dropReason);
-        }
-        mLastDropReason = dropReason;
-        // 将mPendingEvent 置为 Null，方便下次重新获取
-        releasePendingEventLocked();
-        *nextWakeupTime = LONG_LONG_MIN; // force next poll to wake up immediately
-    }
 }
 ```
 
-从上面备注可以知道，MTION和KEY类型的事件都会调用到dispatchKeyLocked。
+## 3.2 enqueueDispatchEntryLocked
 
- ### dispatchEventLocked
-
-dispatchEventLocked 主要是遍历inputTargets，通过prepareDispatchCycleLocked分发事件。prepareDispatchCycleLocked内部又会调用enqueueDispatchEntriesLocked方法
-
-```java
-> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
-  
-void InputDispatcher::dispatchEventLocked(nsecs_t currentTime,
-                                          std::shared_ptr<EventEntry> eventEntry,
-                                          const std::vector<InputTarget>& inputTargets) {
-    ...
-    for (const InputTarget& inputTarget : inputTargets) {
-        sp<Connection> connection =
-                getConnectionLocked(inputTarget.inputChannel->getConnectionToken());
-        if (connection != nullptr) {
-            prepareDispatchCycleLocked(currentTime, connection, eventEntry, inputTarget);
-        }
-    }
-}
-```
-
-### enqueueDispatchEntriesLocked
-
-主要做两个事情：1）将请求模式的调度条目排队。2）启动调度周期。
-
-```java
-> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
-  
-void InputDispatcher::enqueueDispatchEntriesLocked(nsecs_t currentTime,
-                                                   const sp<Connection>& connection,
-                                                   std::shared_ptr<EventEntry> eventEntry,
-                                                   const InputTarget& inputTarget) {
-    bool wasEmpty = connection->outboundQueue.empty();
-    // 将请求模式的调度条目排队。
-    enqueueDispatchEntryLocked(connection, eventEntry, inputTarget,
-                               InputTarget::FLAG_DISPATCH_AS_HOVER_EXIT);
-    ...
-    // 如果出站队列以前为空，请开始调度周期。
-    if (wasEmpty && !connection->outboundQueue.empty()) {
-        startDispatchCycleLocked(currentTime, connection);
-    }
-}
-```
-
-### enqueueDispatchEntryLocked
-
-enqueueDispatchEntryLocked 会创建一个新的DispatchEntry，然后将DispatchEntry 加入到connection的outboundQueue 中
+enqueueDispatchEntryLocked() 会创建一个新的DispatchEntry，然后将DispatchEntry 加入到connection#outboundQueue 中
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
@@ -250,7 +141,7 @@ void InputDispatcher::enqueueDispatchEntryLocked(const sp<Connection>& connectio
 }
 ```
 
-### startDispatchCycleLocked
+## 3.3 startDispatchCycleLocked
 
 该方法主要通过connection 发布最终的事件，至此，InputDispatcher完成事件的发布，并且将发布的事件保存在connection的waitQueue中。
 
@@ -262,161 +153,105 @@ void InputDispatcher::startDispatchCycleLocked(nsecs_t currentTime,
     while (connection->status == Connection::Status::NORMAL && !connection->outboundQueue.empty()) {
          // 从outboundQueue 队列中取出 DispatchEntry
         DispatchEntry* dispatchEntry = connection->outboundQueue.front();
+        const std::chrono::nanoseconds timeout = getDispatchingTimeoutLocked(connection);
+        // 设置超时时间
+        dispatchEntry->timeoutTime = currentTime + timeout.count();
         // 发布事件
         status_t status;
         const EventEntry& eventEntry = *(dispatchEntry->eventEntry);
-        switch (eventEntry.type) {
-            case EventEntry::Type::KEY: {
-                ...
-                // 发布按键事件
-                status = connection->inputPublisher
-                                 .publishKeyEvent(dispatchEntry->seq ...);
-                break;
-            }
-
-            case EventEntry::Type::MOTION: {
-                ...
-                // 发布运动事件。
-                status = connection->inputPublisher
-                                 .publishMotionEvent(dispatchEntry->seq ...);
-                break;
-            }
-            ....
-        }
-        // 如果status 已赋值
-        if (status) {
-            if (status == WOULD_BLOCK) {
-                if (connection->waitQueue.empty()) {
-                    // pip 管道满了导致无法发布事件。
-                    // 该问题是出乎意料的，因为等待队列是空的，所以管道应该是空的
-                    
-                    // 将outboundQueue，waitQueue 队列清空，并释放队列中的DispatchEntry 对象
-                    abortBrokenDispatchCycleLocked(currentTime, connection, true /*notify*/);
-                } else {
-                    // 管道已满，并且waitQueue 不为空，我们正在等待应用程序完成处理一些事件，然后再向其发送更多事件。
-                }
-            } else {
-                // 将outboundQueue，waitQueue 队列清空，并释放队列中的DispatchEntry 对象
-                abortBrokenDispatchCycleLocked(currentTime, connection, true /*notify*/);
-            }
-            return;
-        }
+        ...
         // 在等待队列上重新排队事件。
         connection->outboundQueue.erase(std::remove(connection->outboundQueue.begin(),
                                                     connection->outboundQueue.end(),
                                                     dispatchEntry));
         // 在waitQueue 尾部重新插入
         connection->waitQueue.push_back(dispatchEntry);
-    }
-}
-```
-
-### publishMotionEvent
-
-查看connection的头文件，可以知道connection->inputPublisher 是InputPublisher类
-
-```java
-> frameworks/native/services/inputflinger/dispatcher/Connection.h
-
-class Connection : public RefBase {
-public:
-    InputPublisher inputPublisher;
-}
-```
-
- InputPublisher class的定义如下，负责将输入事件发布到输入通道。
-
-```java
-> frameworks/native/include/input/InputTransport.h
-  
-// 负责将输入事件发布到输入通道。
-class InputPublisher {
- ....
-private:
-    std::shared_ptr<InputChannel> mChannel;
-}
-
-class InputChannel : public Parcelable {
-}
-```
-
-publishMotionEvent 对应的实现如下
-
-```java
-> frameworks/native/libs/input/InputTransport.cpp
-  
-status_t InputPublisher::publishMotionEvent(
-             uint32_t seq, int32_t eventId, int32_t deviceId, int32_t source, int32_t displayId ..) {
-    ....
-    InputMessage msg;
-    // 设置event的参数
-    msg.header.type = InputMessage::Type::MOTION;
-    msg.body.motion.action = action;
-    ....
-    // 调用InputChannel的sendMessage方法
-    return mChannel->sendMessage(&msg);
-}
-```
-
-sendMessage 方法如下
-
-```
-status_t InputChannel::sendMessage(const InputMessage* msg) {
-}
-```
-
-
-
-### runCommandsLockedInterruptable
-
-dispatchOnceInnerLocked已经分析完，我们再次回到dispatchOnce，分析runCommandsLockedInterruptable方法
-
-```java
-> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
-  
-void InputDispatcher::dispatchOnce() {
-    nsecs_t nextWakeupTime = LONG_LONG_MAX;
-    {
-        ...
-        // 运行所有挂起的命令（如果有）。如果运行了任何命令，则强制下一次轮询立即唤醒。
-        if (runCommandsLockedInterruptable()) {
-            nextWakeupTime = LONG_LONG_MIN;
+        if (connection->responsive) {
+            // 插入事件对应的anr检查时间
+            mAnrTracker.insert(dispatchEntry->timeoutTime,
+                               connection->inputChannel->getConnectionToken());
         }
-        ...
     }
 }
 ```
 
-该方法很简单，就是遍历mCommandQueue 执行对应的command。
+## 3.4 ANR超时时间
+
+由 startDispatchCycleLocked() 方法，知道是通过getDispatchingTimeoutLocked() 获取到超时时间
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
-bool InputDispatcher::runCommandsLockedInterruptable() {
-    do {
-        auto command = std::move(mCommandQueue.front());
-        mCommandQueue.pop_front();
-        // Commands are run with the lock held, but may release and re-acquire the lock from within.
-        // 命令在锁保持的情况下运行，但可能会从内部释放并重新获取锁。
-        command();
-    } while (!mCommandQueue.empty());
-    return true;
+//  如果没有用于确定适当调度超时的焦点应用程序或暂停窗口，则默认输入调度超时。
+const std::chrono::duration DEFAULT_INPUT_DISPATCHING_TIMEOUT = std::chrono::milliseconds(
+        android::os::IInputConstants::UNMULTIPLIED_DEFAULT_DISPATCHING_TIMEOUT_MILLIS *
+        HwTimeoutMultiplier());
+
+std::chrono::nanoseconds InputDispatcher::getDispatchingTimeoutLocked(
+        const sp<Connection>& connection) {
+    if (connection->monitor) {
+         // 返回监控的超时时间
+        return mMonitorDispatchingTimeout;
+    }
+    const sp<WindowInfoHandle> window =
+            getWindowHandleLocked(connection->inputChannel->getConnectionToken());
+    if (window != nullptr) {
+        // 可以找到focused Window
+        return window->getDispatchingTimeout(DEFAULT_INPUT_DISPATCHING_TIMEOUT);
+    }
+    // 获取默认的值
+    return DEFAULT_INPUT_DISPATCHING_TIMEOUT;
 }
 ```
 
-通过postCommandLocked 方法将command添加到队列中
+WindowInfoHandle#getDispatchingTimeout 返回的值如下
 
 ```java
-void InputDispatcher::postCommandLocked(Command&& command) {
-    mCommandQueue.push_back(command);
+> libs/gui/include/gui/WindowInfo.h
+
+class WindowInfoHandle : public RefBase {
+  inline std::chrono::nanoseconds getDispatchingTimeout(
+           std::chrono::nanoseconds defaultValue) const {
+      return mInfo.token ? std::chrono::nanoseconds(mInfo.dispatchingTimeout) : defaultValue;
+  }
+}
+
+struct WindowInfo : public Parcelable {
+    std::chrono::nanoseconds dispatchingTimeout = std::chrono::seconds(5); // 5 秒
 }
 ```
 
-### 调用栈
+DEFAULT_INPUT_DISPATCHING_TIMEOUT 主要由UNMULTIPLIED_DEFAULT_DISPATCHING_TIMEOUT_MILLIS * HwTimeoutMultiplier() 计算得到
+
+UNMULTIPLIED_DEFAULT_DISPATCHING_TIMEOUT_MILLIS的值如下
+
+```java
+> android/os/IInputConstants.h
+  
+class IInputConstants : public ::android::IInterface {
+public:
+  enum : int32_t { UNMULTIPLIED_DEFAULT_DISPATCHING_TIMEOUT_MILLIS = 5000 };
+  ....
+};  // class IInputConstants
+}
+```
+
+HwTimeoutMultiplier() 方法定义如下，即读`ro.hw_timeout_multiplier` 属性值，默认是1。
+
+```java
+> system/libbase/include/android-base/properties.h
+ 
+static inline int HwTimeoutMultiplier() {
+  return android::base::GetIntProperty("ro.hw_timeout_multiplier", 1);
+}
+```
+
+## 3.5 调用栈
 
 native层的事件分发调用栈如下
 
 ```java
+libs/input/InputTransport.cpp : InputPublisher::publishMotionEvent()
 services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::startDispatchCycleLocked()
 services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::enqueueDispatchEntriesLocked()
 services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::prepareDispatchCycleLocked()
@@ -426,30 +261,22 @@ services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::dispatch
 services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::start()
 ```
 
+# 4、ANR触发
 
-
-## ANR触发
-
-回到dispatchOnce方法，在新的唤醒中，会调用processAnrsLocked 方法来决定是否需要触发anr
+在dispatchOnce()，会调用processAnrsLocked 方法来决定是否需要触发anr
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
 void InputDispatcher::dispatchOnce() {
-    nsecs_t nextWakeupTime = LONG_LONG_MAX;
-    {
-        ...
-        // 我们可能必须早点醒来以检查应用程序是否正处于anr
-        const nsecs_t nextAnrCheck = processAnrsLocked();
-    } 
-    // 等待回调、超时或唤醒。
-    nsecs_t currentTime = now();
-    int timeoutMillis = toMillisecondTimeoutDelay(currentTime, nextWakeupTime);
-    mLooper->pollOnce(timeoutMillis);
+    ...
+    // 我们可能必须早点醒来以检查应用程序是否正处于anr
+    const nsecs_t nextAnrCheck = processAnrsLocked();
+    ....
 }
 ```
 
-### processAnrsLocked
+## 4.1 processAnrsLocked
 
 该方法是用于检查队列中是否有太旧的事件，如果存在就触发ANR
 
@@ -457,13 +284,14 @@ void InputDispatcher::dispatchOnce() {
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
 // 检查是否有任何连接的等待队列具有太旧的事件。如果我们等待事件被确认的时间超过窗口超时，
- // 请引发 ANR。返回我们下次应该醒来的时间。
+// 请引发 ANR。返回我们下次应该醒来的时间。
 nsecs_t InputDispatcher::processAnrsLocked() {
     const nsecs_t currentTime = now();
-    nsecs_t nextAnrCheck = LONG_LONG_MAX; // 下一次anr超时的时间
+    nsecs_t nextAnrCheck = LONG_LONG_MAX; // 下一次检查anr的时间
     // 检查我们是否正在等待一个聚焦窗口出现。如果等待时间过长就报 ANR
     if (mNoFocusedWindowTimeoutTime.has_value() && mAwaitedFocusedApplication != nullptr) {
         if (currentTime >= *mNoFocusedWindowTimeoutTime) {
+            // 场景1: 当前时间 >= 等待focusedWindow的时间。触发noFocusedWindow的anr
             processNoFocusedWindowAnrLocked();
             mAwaitedFocusedApplication.reset();
             mNoFocusedWindowTimeoutTime = std::nullopt;
@@ -473,7 +301,7 @@ nsecs_t InputDispatcher::processAnrsLocked() {
             nextAnrCheck = *mNoFocusedWindowTimeoutTime;
         }
     }
-    // 检查是否有任何连接 ANR 到期
+    // 检查是否有任何连接 ANR 到期，mAnrTracker 中保存所有已分发事件（未被确认消费的事件）的超时时间
     nextAnrCheck = std::min(nextAnrCheck, mAnrTracker.firstTimeout());
     if (currentTime < nextAnrCheck) { // 最有可能的情况
         // 一切正常，在 nextAnrCheck 再检查一次
@@ -481,38 +309,104 @@ nsecs_t InputDispatcher::processAnrsLocked() {
     }
     // 如果我们到达这里，则连接无响应。
     sp<Connection> connection = getConnectionLocked(mAnrTracker.firstToken());
-    if (connection == nullptr) {
-       // 获取不到事件的连接
-        return nextAnrCheck;
-    }
-    connection->responsive = false;
     // 停止为此无响应的连接唤醒
     mAnrTracker.eraseToken(connection->inputChannel->getConnectionToken());
+    // 场景2: 能找到window，并且事件已经超时，触发ANR
     onAnrLocked(connection);
     return LONG_LONG_MIN;
 }
 ```
 
-在找到connection，并且ANR时间已经超时，就会调用到onAnrLocked。
+其中，mAnrTracker 存储已经成功分发给应用的事件。详情见startDispatchCycleLocked() 方法。
 
-### onAnrLocked
-
-onAnrLocked 有两种实现：
-
-- 能找到当前focus的window
-- 找不到当前focus的window，但是可以找到当前前台应用。
-
-我们在processAnrsLocked 能找到对应的window，所以先看情况1
+mNoFocusedWindowTimeoutTime 是在findFocusedWindowTargetsLocked() 方法中赋值的，在分发事件的时候会调用到findFocusedWindowTargetsLocked() :
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
-//情况1、 能找到window的情况
+InputEventInjectionResult InputDispatcher::findFocusedWindowTargetsLocked(
+        nsecs_t currentTime, const EventEntry& entry, std::vector<InputTarget>& inputTargets,
+        nsecs_t* nextWakeupTime) {
+  ...
+    // 兼容性行为：如果存在焦点应用程序但没有焦点窗口，则引发 ANR。只有当我们有重点事件要调度时，才开始计数。
+    // 如果我们开始通过触摸（应用程序开关）与另一个应用程序交互，则 ANR 将被取消。
+    // 如果将“无聚焦窗口 ANR”移动到策略中，则可以删除此代码。输入不知道应用是否应具有焦点窗口。
+    if (focusedWindowHandle == nullptr && focusedApplicationHandle != nullptr) {
+        if (!mNoFocusedWindowTimeoutTime.has_value()) {
+            // 发现没有focusedWindow，就添加ANR定时器。
+            std::chrono::nanoseconds timeout = focusedApplicationHandle->getDispatchingTimeout(
+                    DEFAULT_INPUT_DISPATCHING_TIMEOUT);
+            mNoFocusedWindowTimeoutTime = currentTime + timeout.count();
+            ....
+            return InputEventInjectionResult::PENDING;
+        }
+    }
+  
+    // 找到一个focusedwindow，就取消ANR定时器
+    resetNoFocusedWindowTimeoutLocked();
+  ...
+}
+
+void InputDispatcher::resetNoFocusedWindowTimeoutLocked() {
+    // 取消ANR定时器
+    mNoFocusedWindowTimeoutTime = std::nullopt;
+    mAwaitedFocusedApplication.reset();
+}
+```
+
+从上面的代码我们能小结出两个场景ANR的条件：
+
+- 当前有等待获取焦点的应用，并且当前时间超过Timeout，调用processNoFocusedWindowAnrLocked() 进一步确认是否触发ANR。
+- 当前时间超过事件响应的超时时间。调用onAnrLocked() 进一步确认是否触发ANR。
+
+## 4.2 processNoFocusedWindowAnrLocked
+
+该方法触发anr的条件是： 
+
+1. 当前关注的应用程序必须与我们等待的应用程序相同。
+2. 确保我们仍然没有聚焦窗口。
+
+processNoFocusedWindowAnrLocked()  最后也是调用到onAnrLocked()。
+
+```java
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+
+//  如果没有聚焦窗口，请触发ANR。在触发 ANR 之前，请执行最终状态检查： 
+void InputDispatcher::processNoFocusedWindowAnrLocked() {
+    std::shared_ptr<InputApplicationHandle> focusedApplication =
+            getValueByKey(mFocusedApplicationHandlesByDisplay, mAwaitedApplicationDisplayId);
+    if (focusedApplication == nullptr ||
+        focusedApplication->getApplicationToken() !=
+                mAwaitedFocusedApplication->getApplicationToken()) {
+        // 出乎意料，因为当前焦点应用程序已被更改，我们应该重置 ANR 计时器
+        return;
+    }
+    const sp<WindowInfoHandle>& focusedWindowHandle =
+            getFocusedWindowHandleLocked(mAwaitedApplicationDisplayId);
+    if (focusedWindowHandle != nullptr) {
+        //我们现在有一个焦点window，不需要再触发ANR
+        return;
+    }
+    onAnrLocked(mAwaitedFocusedApplication);
+}
+```
+
+onAnrLocked() 有两种实现：
+
+- 能找到当前focus的window
+- 找不到当前focus的window，但是可以找到当前fousedApplication。
+
+我们先看情况1
+
+## 4.3 onAnrLocked（connection）
+
+```java
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+  
+//情况1: 能找到window的情况
 void InputDispatcher::onAnrLocked(const sp<Connection>& connection) {
     // 由于我们允许策略延长超时，因此 waitQueue 可能已经再次正常运行。在这种情况下不要触发 ANR
     if (connection->waitQueue.empty()) {
-        ALOGI("Not raising ANR because the connection %s has recovered",
-              connection->inputChannel->getName().c_str());
         return;
     }
      // “最旧的条目”是首次发送到应用程序的条目。但是，该条目可能不是导致超时发生的条目。
@@ -520,6 +414,7 @@ void InputDispatcher::onAnrLocked(const sp<Connection>& connection) {
      // 在这种情况下，最新条目会导致 ANR。但很有可能，该应用程序会线性处理事件。
      // 因此，提供有关最早条目的信息似乎是最有用的。
     DispatchEntry* oldestEntry = *connection->waitQueue.begin();
+    // 获取到超时时长
     const nsecs_t currentWait = now() - oldestEntry->deliveryTime;
     std::string reason =  
             android::base::StringPrintf("%s is not responding. Waited %" PRId64 "ms for %s",
@@ -529,26 +424,9 @@ void InputDispatcher::onAnrLocked(const sp<Connection>& connection) {
     sp<IBinder> connectionToken = connection->inputChannel->getConnectionToken();
     // 生成 reason 报告
     updateLastAnrStateLocked(getWindowHandleLocked(connectionToken), reason);
-
     processConnectionUnresponsiveLocked(*connection, std::move(reason));
-
     // 停止唤醒此连接上的事件，它已经没有响应
     cancelEventsForAnrLocked(connection);
-}
-
-//情况2、 找不到focus的window，但是找到当前获取input事件的应用。
-void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
-    std::string reason =
-            StringPrintf("%s does not have a focused window", application->getName().c_str());
-    // 收集anr的window、reason信息
-    updateLastAnrStateLocked(*application, reason);
-
-    auto command = [this, application = std::move(application)]() REQUIRES(mLock) {
-        scoped_unlock unlock(mLock);
-        mPolicy->notifyNoFocusedWindowAnr(application);
-    };
-    // 将anr的命令添加到 mCommandQueue 中
-    postCommandLocked(std::move(command));
 }
 // 捕获 ANR 时 InputDispatcher 状态的记录。
 void InputDispatcher::updateLastAnrStateLocked(const std::string& windowLabel,
@@ -558,9 +436,9 @@ void InputDispatcher::updateLastAnrStateLocked(const std::string& windowLabel,
 }
 
 ```
-### dumpDispatchStateLocked
+### 4.3.1 dumpDispatchStateLocked
 
-dumpDispatchStateLocked 函数主要打印当前window和事件队列信息。执行`dumpsys input` 命令，dumpDispatchStateLocked函数输出的内容如下：
+dumpDispatchStateLocked() 函数主要打印当前window和事件队列信息。执行`dumpsys input` 命令，dumpDispatchStateLocked函数输出的内容如下：
 
 ```java
 Input Dispatcher State:
@@ -579,19 +457,13 @@ Input Dispatcher State:
 
 从上面可以看到InboundQueue，OutboundQueue，WaitQueue 3个Queue的状态。其中WaitQueue的size为4，即两对点击事件在等待`com.example.anrdemo`消费。    
 
-### processConnectionUnresponsiveLocked
+### 4.3.2 processConnectionUnresponsiveLocked
 
-在调用完updateLastAnrStateLocked 后，接着调用到processConnectionUnresponsiveLocked
+在调用完updateLastAnrStateLocked() 后，接着调用到processConnectionUnresponsiveLocked()
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
-void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
-    ....
-    processConnectionUnresponsiveLocked(*connection, std::move(reason));
-    ....
-}
-
 // 该方法告诉策略连接已变得无响应，以便它可以启动 ANR。检查感兴趣的连接是监视器还是窗口，并将相应的命令条目添加到命令队列中。
 void InputDispatcher::processConnectionUnresponsiveLocked(const Connection& connection,
                                                           std::string reason) {
@@ -611,9 +483,9 @@ void InputDispatcher::sendWindowUnresponsiveCommandLocked(const sp<IBinder>& tok
 }
 ```
 
-sendWindowUnresponsiveCommandLocked 中将command添加到mCommandQueue队列后，最终调用到mPolicy的notifyWindowUnresponsive 。
+sendWindowUnresponsiveCommandLocked() 中将command添加到mCommandQueue队列后，最终调用到mPolicy的notifyWindowUnresponsive() 。
 
-通过InputDispatcher头文件可以知道mPolicy是InputDispatcherPolicyInterface 接口的实例，对应的实现类是NativeInputManager
+通过InputDispatcher头文件可以知道mPolicy是InputDispatcherPolicyInterface 接口的实例。
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.h
@@ -625,11 +497,9 @@ private:
 }
 ```
 
-### NativeInputManager
-
 NativeInputManager 类实现了InputDispatcherPolicyInterface接口
 
-```JAVA
+```java
 > frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp
   
 class NativeInputManager : public virtual RefBase,
@@ -640,7 +510,33 @@ class NativeInputManager : public virtual RefBase,
 }
 ```
 
-notifyWindowUnresponsive方法实现如下
+## 4.4 onAnrLocked（application）
+
+我们看情况2：
+
+```java
+//情况2: 找不到focus的window，但是找到当前获取input事件的应用。
+void InputDispatcher::onAnrLocked(std::shared_ptr<InputApplicationHandle> application) {
+    std::string reason =
+            StringPrintf("%s does not have a focused window", application->getName().c_str());
+    // 收集anr的window、reason信息
+    updateLastAnrStateLocked(*application, reason);
+    auto command = [this, application = std::move(application)]() REQUIRES(mLock) {
+        scoped_unlock unlock(mLock);
+        mPolicy->notifyNoFocusedWindowAnr(application);
+    };
+    // 将anr的命令添加到 mCommandQueue 中
+    postCommandLocked(std::move(command));
+}
+```
+
+同理，这里也调用到mPolicy（即NativeInputManager）的notifyNoFocusedWindowAnr() 方法。
+
+**onAnrLocked 方法最后会分别调用到NativeInputManager的`notifyWindowUnresponsive()` 和 `notifyNoFocusedWindowAnr()`**
+
+## 4.5 notifyWindowUnresponsive
+
+该方法用于通知窗口无响应
 
 ```java
 > frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp
@@ -684,11 +580,32 @@ int register_android_server_InputManager(JNIEnv* env) {
 }
 ```
 
-这样，anr的消息就抛到了java层的InputManagerService中
+这样，anr的消息就抛到了java层的InputManagerService#notifyWindowUnresponsive()
 
-### 调用栈
+## 4.6 notifyNoFocusedWindowAnr
 
-触发ANR流程中，native层的调用栈如下：
+该方法用于通知无焦点ANR
+
+```java
+> frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp
+
+void NativeInputManager::notifyNoFocusedWindowAnr(
+        const std::shared_ptr<InputApplicationHandle>& inputApplicationHandle) {
+    JNIEnv* env = jniEnv();
+    ScopedLocalFrame localFrame(env);
+    jobject inputApplicationHandleObj =
+            getInputApplicationHandleObjLocalRef(env, inputApplicationHandle);
+    env->CallVoidMethod(mServiceObj, gServiceClassInfo.notifyNoFocusedWindowAnr,
+                        inputApplicationHandleObj);
+    checkAndClearExceptionFromCallback(env, "notifyNoFocusedWindowAnr");
+}
+```
+
+同理，该方法最后通过JNI调用到Java层 InputManagerService#notifyNoFocusedWindowAnr()
+
+## 4.7 调用栈
+
+`能找到window的connection` 对应的调用栈
 
 ```java
 services/core/jni/com_android_server_input_InputManagerService.cpp : NativeInputManager::notifyWindowUnresponsive()
@@ -700,31 +617,44 @@ services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::dispatch
 services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::start()
 ```
 
+`没有找到window，但是能找到当前应用` 对应的调用栈
 
+```java
+services/core/jni/com_android_server_input_InputManagerService.cpp : NativeInputManager::notifyNoFocusedWindowAnr()
+services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::onAnrLocked()
+services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::processAnrsLocked()
+services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::dispatchOnce()
+services/inputflinger/dispatcher/InputDispatcher.cpp : InputDispatcher::start()
+```
 
-## ANR对话框显示流程
+# 5、ANR对话框显示流程
 
-### InputManagerService
+## 5.1 InputManagerService
 
-InputManagerService的notifyWindowUnresponsive方法实现如下，很简单，也是调用mWindowManagerCallbacks 做转发
+上面提到ANR分两种场景：                                                                                                                                                                                                                                                                                                                                                                                                                        
+
+- 能找到window的connection，常见提示：`"%s is not responding. Waited %d ms for %s"`
+- 没有找到window，但是能找到当前应用，常见异常信息：`"Application does not have a focused window"`
+
+这里就分开讨论一下
+
+### 5.1.1 notifyWindowUnresponsive
+
+InputManagerService#notifyWindowUnresponsive(                                                                                                                                                                                                                                                                                                         ) 方法实现如下，很简单，只调用mWindowManagerCallbacks 做转发
 
 ```java
 > frameworks/base/services/core/java/com/android/server/input/InputManagerService.java
   
 public class InputManagerService {
      // Native callback
-     private void notifyWindowUnresponsive(IBinder token, int pid, boolean isPidValid,
-                                            String reason) {
+     private void notifyWindowUnresponsive(IBinder token, int pid, boolean isPidValid, String reason) {
         mWindowManagerCallbacks.notifyWindowUnresponsive(token,
                 isPidValid ? OptionalInt.of(pid) : OptionalInt.empty(), reason);
     } 
 }
-
 ```
 
-mWindowManagerCallbacks 是一个WindowManagerCallbacks接口，对应实现类是InputManagerCallback
-
-在InputManagerCallback 中，将事件传给了WindowManagerService的mAnrController。
+在InputManagerCallback 中，将事件传给了WindowManagerService#mAnrController。
 
 ```java
 > frameworks/base/services/core/java/com/android/server/wm/InputManagerCallback.java
@@ -739,33 +669,25 @@ final class InputManagerCallback implements InputManagerService.WindowManagerCal
 }
 ```
 
-### AnrController
-
-notifyWindowUnresponsive 实现如下
+mAnrController即AnrController的实例，AnrController#notifyWindowUnresponsive() 实现如下
 
 ```java
 > frameworks/base/services/core/java/com/android/server/wm/AnrController.java
   
 // 通知由其输入令牌标识的窗口无响应。 @return 如果窗口由给定的输入令牌标识并且请求已处理，则返回 true，否则返回 false。
 private boolean notifyWindowUnresponsive(@NonNull IBinder inputToken, String reason) {
-        preDumpIfLockTooSlow();
         final int pid;
         final boolean aboveSystem;
         final ActivityRecord activity;
         synchronized (mService.mGlobalLock) {
-            com.android.server.wm.InputTarget target = mService.getInputTargetFromToken(inputToken);
-            if (target == null) {
-                return false;
-            }
+ 						InputTarget target = mService.getInputTargetFromToken(inputToken);
             WindowState windowState = target.getWindowState();
             pid = target.getPid();
-            // Blame the activity if the input token belongs to the window. If the target is
-            // embedded, then we will blame the pid instead.
-            // 如果输入令牌属于窗口，则归咎于活动。如果目标是嵌入式的，那么我们就会责怪 pid。
+            // 如果输入令牌属于窗口，则归咎于Activity。如果目标是嵌入式的，那么我们就会归咎 pid。
             activity = (windowState.mInputChannelToken == inputToken)
                     ? windowState.mActivityRecord : null;
-            Slog.i(TAG_WM, "ANR in " + target + ". Reason:" + reason);
             aboveSystem = isWindowAboveSystem(windowState);
+            // 调用WindowManagerService#saveANRStateLocked 保存ANR相关信息
             dumpAnrStateLocked(activity, windowState, reason);
         }
         // 这里的activity是ActivityRecord类的实例
@@ -782,9 +704,57 @@ private boolean notifyWindowUnresponsive(@NonNull IBinder inputToken, String rea
 
 无论上面的activity是否为null，最终都会调用到mAmInternal.inputDispatchingTimedOut() 方法，只是传的参数不一样。
 
-我们直接看能找到activityRecord的情况
+### 5.1.2 notifyNoFocusedWindowAnr
 
-### ActivityRecord
+实现如下，只是作为转发给mWindowManagerCallbacks
+
+```java
+> frameworks/base/services/core/java/com/android/server/input/InputManagerService.java
+
+    // Native callback.
+    private void notifyNoFocusedWindowAnr(InputApplicationHandle inputApplicationHandle) {
+        mWindowManagerCallbacks.notifyNoFocusedWindowAnr(inputApplicationHandle);
+    }
+```
+
+mWindowManagerCallbacks 是一个WindowManagerCallbacks接口，对应实现类是InputManagerCallback
+
+```java
+> frameworks/base/services/core/java/com/android/server/wm/InputManagerCallback.java
+  
+final class InputManagerCallback implements InputManagerService.WindowManagerCallbacks {
+     private final WindowManagerService mService;
+    // 通知窗口管理器有关由于没有焦点窗口而没有响应的应用程序。
+    @Override
+    public void notifyNoFocusedWindowAnr(@NonNull InputApplicationHandle applicationHandle) {
+        mService.mAnrController.notifyAppUnresponsive(
+                applicationHandle, "Application does not have a focused window");
+    }
+}
+```
+
+mAnrController 是AnrController 的实例，notifyAppUnresponsive() 实现如下：
+
+```java
+> frameworks/base/services/core/java/com/android/server/wm/AnrController.java
+    
+    void notifyAppUnresponsive(InputApplicationHandle applicationHandle, String reason) {
+        preDumpIfLockTooSlow();
+        final ActivityRecord activity;
+        synchronized (mService.mGlobalLock) {
+            // 获取activity
+            activity = ActivityRecord.forTokenLocked(applicationHandle.token);
+            // 保存ANR 信息
+            dumpAnrStateLocked(activity, null /* windowState */, reason);
+            mUnresponsiveAppByDisplay.put(activity.getDisplayId(), activity);
+        }
+        activity.inputDispatchingTimedOut(reason, INVALID_PID);
+    }
+```
+
+最后也会调用到ActivityRecord#inputDispatchingTimedOut() 方法。
+
+## 5.2 ActivityRecord
 
 inputDispatchingTimedOut 实现如下
 
@@ -809,7 +779,7 @@ inputDispatchingTimedOut 实现如下
  }
 ```
 
-### ActivityManagerService
+## 5.3 ActivityManagerService
 
 inputDispatchingTimedOut 方法最后调用到ActivityManagerInternal的inputDispatchingTimedOut，ActivityManagerInternal 是一个抽象类，对应实现是LocalService
 
@@ -842,7 +812,7 @@ public final class LocalService extends ActivityManagerInternal {
     }
 ```
 
-### AnrHelper
+## 5.4 AnrHelper
 
 AnrHelper.appNotResponding方法实现如下
 
@@ -907,7 +877,7 @@ private static class AnrRecord {
 
 mErrorState 是 ProcessErrorStateRecord 类的实例。
 
-### ProcessErrorStateRecord
+## 5.5 ProcessErrorStateRecord
 
 ProcessErrorStateRecord.appNotResponding() 方法很长，主要做
 
@@ -962,7 +932,7 @@ final class UiHandler extends Handler {
 }
 ```
 
-### AppErrors
+## 5.6 AppErrors
 
 handleShowAnrUi对应实现如下，主要用于判断是否需要显示ANR对话框
 
@@ -991,7 +961,7 @@ void handleShowAnrUi(Message msg) {
 
 ProcessErrorStateRecord.getDialogController() 方法返回ErrorDialogController 对象
 
-### ErrorDialogController
+## 5.7 ErrorDialogController
 
 ErrorDialogController 主要就是控制对话框的显示跟隐藏。
 
@@ -1027,7 +997,7 @@ void forAllDialogs(List<? extends BaseErrorDialog> dialogs, Consumer<BaseErrorDi
 }
 ```
 
-### AppNotRespondingDialog
+## 5.8 AppNotRespondingDialog
 
 ANR对话框的实现如下
 
@@ -1102,9 +1072,28 @@ final class AppNotRespondingDialog extends BaseErrorDialog implements View.OnCli
 }
 ```
 
-### 调用栈
+## 5.9 cancelEventsForAnrLocked
 
-Java层的调用堆栈如下所示
+cancelEventsForAnrLocked方法用于停止唤醒此连接上的事件，这些事件已经没有响应。
+
+```java
+void InputDispatcher::cancelEventsForAnrLocked(const sp<Connection>& connection) {
+    // 我们不会在这里中断任何连接，即使策略希望我们中止调度。如果策略决定关闭应用，
+    // 我们将通过 unregisterInputChannel 获取通道删除事件，并以这种方式清理连接。
+    // 当连接阻塞时，我们已经没有向连接发送新的指针，但重点事件将继续堆积。
+    ALOGW("Canceling events for %s because it is unresponsive",
+          connection->inputChannel->getName().c_str());
+    if (connection->status == Connection::Status::NORMAL) {
+        CancelationOptions options(CancelationOptions::CANCEL_ALL_EVENTS,
+                                   "application not responding");
+        synthesizeCancelationEventsForConnectionLocked(connection, options);
+    }
+}
+```
+
+## 5.10 调用栈
+
+找到window场景，Java层的调用堆栈如下所示
 
 ```java
 services/core/java/com/android/server/am/AppNotRespondingDialog.java : show()
@@ -1125,30 +1114,84 @@ services/core/java/com/android/server/input/InputManagerService.java : notifyWin
 
 ```
 
-### cancelEventsForAnrLocked
+没有找到connection，但是找到对应应用，Java层的调用堆栈如下所示。
 
-cancelEventsForAnrLocked方法用于停止唤醒此连接上的事件，这些事件已经没有响应。
+可以看到两者的调用栈区别并不大，主要是在InputManagerService中调用栈不一样。
 
 ```java
-void InputDispatcher::cancelEventsForAnrLocked(const sp<Connection>& connection) {
-    // 我们不会在这里中断任何连接，即使策略希望我们中止调度。如果策略决定关闭应用，
-    // 我们将通过 unregisterInputChannel 获取通道删除事件，并以这种方式清理连接。
-    // 当连接阻塞时，我们已经没有向连接发送新的指针，但重点事件将继续堆积。
-    ALOGW("Canceling events for %s because it is unresponsive",
-          connection->inputChannel->getName().c_str());
-    if (connection->status == Connection::Status::NORMAL) {
-        CancelationOptions options(CancelationOptions::CANCEL_ALL_EVENTS,
-                                   "application not responding");
-        synthesizeCancelationEventsForConnectionLocked(connection, options);
-    }
-}
+services/core/java/com/android/server/am/AppNotRespondingDialog.java : show()
+services/core/java/com/android/server/am/ErrorDialogController.java : showAnrDialogs()
+services/core/java/com/android/server/am/AppErrors.java : handleShowAnrUi()
+services/core/java/com/android/server/am/ActivityManagerService.java : UiHandler.SHOW_NOT_RESPONDING_UI_MSG
+services/core/java/com/android/server/am/ProcessErrorStateRecord.java : appNotResponding() 
+services/core/java/com/android/server/am/AnrHelper.java : AnrRecord.appNotResponding()
+services/core/java/com/android/server/am/AnrHelper.java : AnrConsumerThread.run()
+services/core/java/com/android/server/am/AnrHelper.java : startAnrConsumerIfNeeded()
+services/core/java/com/android/server/am/AnrHelper.java : appNotResponding()
+services/core/java/com/android/server/am/ActivityManagerService.java : inputDispatchingTimedOut()
+services/core/java/com/android/server/am/ActivityManagerService.java : LocalService.inputDispatchingTimedOut()
+services/core/java/com/android/server/wm/ActivityRecord.java : inputDispatchingTimedOut()
+services/core/java/com/android/server/wm/AnrController.java : notifyAppUnresponsive()
+services/core/java/com/android/server/wm/InputManagerCallback.java : notifyNoFocusedWindowAnr()
+services/core/java/com/android/server/input/InputManagerService.java : notifyNoFocusedWindowAnr()
 ```
 
+# 6、总结
+
+## 6.1 问题解答
+
+先回答之前的两个问题
+
+问题1：如果在activity任意周期（onCreate,onResume等），同步执行耗时超过5s（ANR时间）的任务，期间不进行点击，那会触发ANR吗？
+
+答：不会。
+
+原因：ANR的条件是waitQueue 不为空，在activity启动过程，没有触发按键事件的分发，也就 自然不会调用ANR检查流程，即processAnrsLocked()
 
 
-## 参考文献：
+
+问题2：如果在button点击的时候，在onClick回调同步执行耗时超过5s的任务。点击一次会触发ANR吗？点击2次呢，3次呢？
+
+答：点击一次不会触发ANR，在上个任务结束之前，再次点击会导致ANR。
+
+原因：在第一次点击的时候，在processAnrsLocked()检查ANR过程中，waitQueue虽然不为空，但是还没到超时时间。故不会触发ANR。
+
+在第二次分发按键结束的时候，在processAnrsLocked()检查ANR过程中，发现waitQueue 不为空，并且已经有事件超时了，那么就会触发ANR的逻辑
+
+## 6.2 Input ANR分类
+
+当发生ANR的时候，System log 会出现如下信息，tag是 ActivityManager
+
+```java
+"Input dispatching timed out (" + reason + ")"
+```
+
+其中reason取值如下：
+
+- 能找到focusedWindow：`"%s is not responding. Waited %d ms for %s"`
+- 不能找到focusedWindow，但是找到focused应用：`Application does not have a focused window`
+
+在Android13 之前，这种分类的异常log是
+
+```java
+Waiting because no window has focus but %s may eventually add a window when it finishes starting up. Will wait for %d ms 
+```
+
+- 其他类型：reason为null。
+
+## 6.3 Input ANR 条件
+
+- 能找到window：waitQueue 不为空，并且当前时间 > 最早分发事件的超时时间。
+- 找不到window，但是找到focused应用：当前时间 > 等待FocusedWindow的时间。
+
+## 6.4 修改Input超时时间
+
+这个必须是厂家或者有root权限才能修改。
+
+- 通过修改 UNMULTIPLIED_DEFAULT_DISPATCHING_TIMEOUT_MILLIS 的值来改变timeOut值。
+- 通过修改ro.hw_timeout_multiplier 属性值（倍数，int值）来修改，需要root权限，默认是1倍。
+
+# 参考文章：
 
 - [Input系统—ANR原理分析](http://gityuan.com/2017/01/01/input-anr/)
-- [Android input anr 分析](https://zhuanlan.zhihu.com/p/53331495)
-- [【CSDN】源码剖析Android  anr机制](https://blog.csdn.net/xt_xiaotian/article/details/121250498)
 
