@@ -141,7 +141,7 @@ tags:
  ```java
    textView.setGravity(isRtl(this) ? Gravity.RIGHT:Gravity.LEFT);
  ```
- 
+
 结果大家显然都知道了，这里就不列出来了。
 
 但是这样还是觉得很麻烦，有没有更便捷的属性？有！
@@ -421,6 +421,15 @@ unicode|说明|翻译：代码
 实际显示如下：
 
 ![在这里插入图片描述](/img/blog_android_rtl/img16.png)
+
+或者使用如下接口
+
+```java
+    // 获取ltr的字符串
+    public static String formatLtrString(String content) {
+        return BidiFormatter.getInstance().unicodeWrap(content, TextDirectionHeuristicsCompat.LTR);
+    }
+```
 
 ## 总结
 

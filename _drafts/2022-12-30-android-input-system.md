@@ -1,27 +1,28 @@
 ---
 layout:     post
-title:      "Android 输入系统分析"
+title:      "Android Input系统事件分发分析"
 subtitle:   " \" Android是怎么分发触摸事件的？\""
-date:       2022-12-30 10:00:00
+date:       2023-01-02 10:00:00
 author:     "Weiwq"
 header-img: "img/background/home-bg-o.jpg"
 catalog:  true
 isTop:  true
 tags:
     - Android
+
 ---
 
-> “本文基于Android13源码，分析Input系统实现原理“
+> “本文基于Android13源码，分析Input系统中，事件分发的实现原理“
 
-# InputReader
 
-Inputreader主要的作用是：
 
-- 读取节点/dev/input，将Input_event 结构体转成相应的EventEntry，比如按键事件对应KeyEntry，触摸事件对应MotionEntry
-- 将事件添加到mInboundQueue队列尾部。
-- KeyboardInputMapper.processKey()的过程, 记录下按下down事件的时间点。
+# 前言
 
-![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/1.jpg)
+在文章之前，有必要提一下InputReader。其在启动的时候，会创建一个InputReader线程，用于从/dev/input节点获取事件，转换成EventEntry事件加入到InputDispatcher的mInboundQueue。详情见 [Input系统—InputReader线程](http://gityuan.com/2016/12/11/input-reader/)
+
+Inputdispatcher 则负责消费mInboundQueue中的事件，并将事件转化后发送给app端，他们的关系如下：
+
+![](/Users/file/blog/weiwangqiang.github.io\img/blog_activity_anr/3.png)
 
 # InputDispatcher
 
@@ -40,13 +41,13 @@ Inputdispatcher中，在线程里面调用到dispatchOnce方法，该方法中�
 2. Connection的outboundQueue：该队列是存储即将要发送给应用的输入事件。
 3. Connection的waitQueue：队列存储的是已经发给应用的事件，但是应用还未处理完成的。
 
-![](D:\myBlog\weiwangqiang.github.io\img/blog_activity_anr/3.png)
+# 事件分发
 
-## dispatchOnce
-
-dispatchOnce 中主要就是调用如下的两个方法，一个是事件分发，一个是检查ANR
+InputDispatcher 在start() 方法中会启动一个线程，在被唤醒后会调用到dispatchOnce 方法，在该方法中，通过调用dispatchOnceInnerLocked来分发事件
 
 ```java
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+
 void InputDispatcher::dispatchOnce() {
     nsecs_t nextWakeupTime = LONG_LONG_MAX;
     {
@@ -55,14 +56,8 @@ void InputDispatcher::dispatchOnce() {
         if (!haveCommandsLocked()) {
             dispatchOnceInnerLocked(&nextWakeupTime);
         }
-        // 运行所有挂起的命令（如果有）。如果运行了任何命令，则强制下一次轮询立即唤醒。
-        if (runCommandsLockedInterruptable()) {
-            nextWakeupTime = LONG_LONG_MIN;
-        }
-        ...
-        // 我们可能必须早点醒来以检查应用程序是否正处于anr
-        const nsecs_t nextAnrCheck = processAnrsLocked();
-    } 
+        ....
+    }
     // 等待回调、超时或唤醒。
     nsecs_t currentTime = now();
     int timeoutMillis = toMillisecondTimeoutDelay(currentTime, nextWakeupTime);
@@ -70,57 +65,58 @@ void InputDispatcher::dispatchOnce() {
 }
 ```
 
-我们先简单看看事件分发过程
-
-# 事件分发
-
-dispatchOnce 中，通过调用dispatchOnceInnerLocked来分发事件
-
 ## dispatchOnceInnerLocked
 
 dispatchOnceInnerLocked主要是：
 
-1）从mInboundQueue 中取出mPendingEvent
+- 从mInboundQueue 中取出mPendingEvent
 
-2）通过mPendingEvent的type决定事件类型和分发方式。比如当前是key类型。
+- 通过mPendingEvent的type决定事件类型和分发方式。
 
-3）最后如果处理了事件，就处理相关的回收。
+- 最后如果处理了事件，就处理相关的回收。
 
 主要代码如下：
 
 ```java
-> services/inputflinger/dispatcher/InputDispatcher.cpp
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
   
 void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     nsecs_t currentTime = now();
     ...
     // 优化应用切换的延迟。本质上，当按下应用程序切换键（HOME）时，我们会开始一个短暂的超时。
     // 当它过期时，我们会抢占调度并删除所有其他挂起的事件。
-    bool isAppSwitchDue = mAppSwitchDueTime <= currentTime;
+    bool isAppSwitchDue = mAppSwitchDueTime <= currentTime; // mAppSwitchDueTime是应用切换到期时间
+    if (mAppSwitchDueTime < *nextWakeupTime) {
+        *nextWakeupTime = mAppSwitchDueTime; // 更新下一次唤醒的时间
+    }
     // 当前没有PendingEvent（即EventEntry），则取一个
     if (!mPendingEvent) {
         // 1、mInboundQueue 为空
         if (mInboundQueue.empty()) {
-            // 如果适用，合成键重复。
+            // 如果合适就合成一个重复按键。
             if (mKeyRepeatState.lastKeyEntry) {
                 if (currentTime >= mKeyRepeatState.nextRepeatTime) {
+                    // 用于创建一个新的repeat按键
                     mPendingEvent = synthesizeKeyRepeatLocked(currentTime);
+                } else {
+                    if (mKeyRepeatState.nextRepeatTime < *nextWakeupTime) {
+                        *nextWakeupTime = mKeyRepeatState.nextRepeatTime;
+                    }
                 }
-                ...
             }
             // 如果没有PendingEvent，就直接返回
             if (!mPendingEvent) {
                 return;
             }
         } else {
-        // 2、mInboundQueue不为空 ，就从队列前面取一个PendingEvent
+        // 2、mInboundQueue不为空，就从队列前面取一个PendingEvent
             mPendingEvent = mInboundQueue.front();
             mInboundQueue.pop_front();
             traceInboundQueueLengthLocked();
         }
-        // Poke user activity for this event.
         if (mPendingEvent->policyFlags & POLICY_FLAG_PASS_TO_USER) {
             // 根据当前的event 类型，post 一个 command 到 mCommandQueue
+            // 最后是调用到Java层的PowerManagerService#userActivityFromNative()
             pokeUserActivityLocked(*mPendingEvent);
         }
     }
@@ -128,6 +124,7 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     ...
     bool done = false;
     DropReason dropReason = DropReason::NOT_DROPPED;
+    ...
     switch (mPendingEvent->type) {
         ...
         case EventEntry::Type::KEY: {
@@ -156,9 +153,98 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
 }
 ```
 
+#### dispatchKeyLocked
+
+```java
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<KeyEntry> entry,
+                                        DropReason* dropReason, nsecs_t* nextWakeupTime) {
+  //预处理：主要处理按键重复问题
+  if (!entry->dispatchInProgress) {
+       ...
+          if (mKeyRepeatState.lastKeyEntry &&
+                mKeyRepeatState.lastKeyEntry->keyCode == entry->keyCode &&
+                // 我们已经看到连续两个相同的按键，这表明设备驱动程序正在自动生成键重复。
+                // 我们在这里记下重复，但我们禁用了自己的下一个键重复计时器，因为很明显我们不需要自己合成键重复。
+                mKeyRepeatState.lastKeyEntry->deviceId == entry->deviceId) {
+                // 确保我们不会从其他设备获取密钥。如果按下了相同的设备 ID，则新的设备 ID 将替换当前设备 ID 以按住重复键并重置重复计数。
+                // 将来，当设备ID上出现KEY_UP时，请将其删除，并且不要停止当前设备上的密钥重复。
+                entry->repeatCount = mKeyRepeatState.lastKeyEntry->repeatCount + 1;
+                resetKeyRepeatLocked();
+                mKeyRepeatState.nextRepeatTime = LONG_LONG_MAX; // 不要自己生成重复
+            } else {
+                //不是重复。保存按键down状态，以防我们稍后遇到重复。
+                resetKeyRepeatLocked();
+                mKeyRepeatState.nextRepeatTime = entry->eventTime + mConfig.keyRepeatTimeout;
+            }
+            mKeyRepeatState.lastKeyEntry = entry;
+       ...
+    }
+    // 处理policy 上次要求我们重试的情况
+    if (entry->interceptKeyResult == KeyEntry::INTERCEPT_KEY_RESULT_TRY_AGAIN_LATER) {
+         // 当前时间 < 唤醒时间，则进入等待状态
+        if (currentTime < entry->interceptKeyWakeupTime) {
+            if (entry->interceptKeyWakeupTime < *nextWakeupTime) {
+                *nextWakeupTime = entry->interceptKeyWakeupTime;
+            }
+            return false; // 等到下次醒来
+        }
+        entry->interceptKeyResult = KeyEntry::INTERCEPT_KEY_RESULT_UNKNOWN;
+        entry->interceptKeyWakeupTime = 0;
+    }
+    // 给policy提供拦截key的机会。
+    if (entry->interceptKeyResult == KeyEntry::INTERCEPT_KEY_RESULT_UNKNOWN) {
+        if (entry->policyFlags & POLICY_FLAG_PASS_TO_USER) {
+            sp<IBinder> focusedWindowToken =
+                    mFocusResolver.getFocusedWindowToken(getTargetDisplayId(*entry));
+
+            auto command = [this, focusedWindowToken, entry]() REQUIRES(mLock) {
+                doInterceptKeyBeforeDispatchingCommand(focusedWindowToken, *entry);
+            };
+            postCommandLocked(std::move(command));
+            return false; // wait for the command to run
+        } else {
+            entry->interceptKeyResult = KeyEntry::INTERCEPT_KEY_RESULT_CONTINUE;
+        }
+    } else if (entry->interceptKeyResult == KeyEntry::INTERCEPT_KEY_RESULT_SKIP) {
+        if (*dropReason == DropReason::NOT_DROPPED) {
+            *dropReason = DropReason::POLICY;
+        }
+    }
+    // 如果删除事件，则清理。
+    if (*dropReason != DropReason::NOT_DROPPED) {
+        setInjectionResult(*entry,
+                           *dropReason == DropReason::POLICY ? InputEventInjectionResult::SUCCEEDED
+                                                             : InputEventInjectionResult::FAILED);
+        mReporter->reportDroppedKey(entry->id);
+        return true;
+    }
+    // 寻找输入目标
+    std::vector<InputTarget> inputTargets;
+    InputEventInjectionResult injectionResult =
+            findFocusedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime);
+    if (injectionResult == InputEventInjectionResult::PENDING) {
+        return false;
+    }
+    setInjectionResult(*entry, injectionResult);
+    if (injectionResult != InputEventInjectionResult::SUCCEEDED) {
+        return true;
+    }
+    // 从事件或焦点显示添加监视器通道。
+    addGlobalMonitoringTargetsLocked(inputTargets, getTargetDisplayId(*entry));
+    // 分发按键
+    dispatchEventLocked(currentTime, entry, inputTargets);
+    return true;
+}
+```
+
+
+
+#### dispatchMotionLocked
+
 从上面备注可以知道，MTION和KEY类型的事件都会调用到dispatchKeyLocked。
 
- ### dispatchEventLocked
+ ## dispatchEventLocked
 
 dispatchEventLocked 主要是遍历inputTargets，通过prepareDispatchCycleLocked分发事件。prepareDispatchCycleLocked内部又会调用enqueueDispatchEntriesLocked方法
 
