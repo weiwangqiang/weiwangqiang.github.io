@@ -157,6 +157,7 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+    
 bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<KeyEntry> entry,
                                         DropReason* dropReason, nsecs_t* nextWakeupTime) {
   //预处理：主要处理按键重复问题
@@ -238,11 +239,62 @@ bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<Key
 }
 ```
 
-
-
 #### dispatchMotionLocked
 
-从上面备注可以知道，MTION和KEY类型的事件都会调用到dispatchKeyLocked。
+```java
+
+bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, std::shared_ptr<MotionEntry> entry,
+                                           DropReason* dropReason, nsecs_t* nextWakeupTime) {
+    ...
+    // 是否是指针事件
+    const bool isPointerEvent = isFromSource(entry->source, AINPUT_SOURCE_CLASS_POINTER);
+    // Identify targets.
+    std::vector<InputTarget> inputTargets;
+    bool conflictingPointerActions = false;
+    InputEventInjectionResult injectionResult;
+    if (isPointerEvent) {  // 指针事件。（例如触摸屏）
+        // 查找已锁定的触摸窗口目标
+        injectionResult =
+                findTouchedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime,
+                                               &conflictingPointerActions);
+    } else {  // 非触摸事件。（例如轨迹球）
+       
+        injectionResult =
+                findFocusedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime);
+    }
+    if (injectionResult == InputEventInjectionResult::PENDING) {
+        return false;
+    }
+
+    setInjectionResult(*entry, injectionResult);
+    if (injectionResult == InputEventInjectionResult::TARGET_MISMATCH) {
+        return true;
+    }
+    if (injectionResult != InputEventInjectionResult::SUCCEEDED) {
+        CancelationOptions::Mode mode(isPointerEvent
+                                              ? CancelationOptions::CANCEL_POINTER_EVENTS
+                                              : CancelationOptions::CANCEL_NON_POINTER_EVENTS);
+        CancelationOptions options(mode, "input event injection failed");
+        synthesizeCancelationEventsForMonitorsLocked(options);
+        return true;
+    }
+
+    // Add monitor channels from event's or focused display.
+    addGlobalMonitoringTargetsLocked(inputTargets, getTargetDisplayId(*entry));
+
+    // Dispatch the motion.
+    if (conflictingPointerActions) {
+        CancelationOptions options(CancelationOptions::CANCEL_POINTER_EVENTS,
+                                   "conflicting pointer actions");
+        synthesizeCancelationEventsForAllConnectionsLocked(options);
+    }
+    dispatchEventLocked(currentTime, entry, inputTargets);
+    return true;
+}
+
+```
+
+
 
  ## dispatchEventLocked
 
