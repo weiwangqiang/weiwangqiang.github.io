@@ -172,7 +172,7 @@ bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<Key
                 // 将来，当设备ID上出现KEY_UP时，请将其删除，并且不要停止当前设备上的密钥重复。
                 entry->repeatCount = mKeyRepeatState.lastKeyEntry->repeatCount + 1;
                 resetKeyRepeatLocked();
-                mKeyRepeatState.nextRepeatTime = LONG_LONG_MAX; // 不要自己生成重复
+        mKeyRepeatState.nextRepeatTime = LONG_LONG_MAX; // 不要自己生成重复
             } else {
                 //不是重复。保存按键down状态，以防我们稍后遇到重复。
                 resetKeyRepeatLocked();

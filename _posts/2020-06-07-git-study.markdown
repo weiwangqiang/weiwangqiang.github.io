@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - git
+    - Git
 ---
 
 > “你真的会用git？“

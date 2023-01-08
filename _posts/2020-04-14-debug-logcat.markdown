@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “为了更爽的使用logcat，我决定好好研究一下“

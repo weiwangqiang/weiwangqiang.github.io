@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “老板，来两斤干货，不要货“

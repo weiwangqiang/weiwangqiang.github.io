@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “android提供了一些命令方便我们调试，这里特意整理了相关指令“

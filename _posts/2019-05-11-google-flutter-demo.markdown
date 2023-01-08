@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - flutter
+    - Flutter
 ---
 
 > “其实我并不喜欢追求新技术。flutter是Google出的？真香～“

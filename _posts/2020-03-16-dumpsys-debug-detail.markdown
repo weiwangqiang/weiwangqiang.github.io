@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “这一篇就聊聊dumpsys 比较常用的命令“

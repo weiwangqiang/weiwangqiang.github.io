@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - python
+    - Python
 ---
 
 > “爬Google翻译还是需要点技巧的“

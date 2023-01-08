@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “为了查看apk信息，你还在反编译吗？“

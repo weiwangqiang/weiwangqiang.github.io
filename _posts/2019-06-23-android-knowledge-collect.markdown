@@ -7,7 +7,7 @@ author:     "Weiwq"
 header-img: "img/background/post-bg-re-vs-ng2.jpg"
 catalog: true
 tags:
-    - android
+    - Android
 ---
 
 > “开发到一定的阶段，有些问题不是API代码就能够解决的，还需要硬件相关的知识“
