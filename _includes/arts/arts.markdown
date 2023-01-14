@@ -1,7 +1,7 @@
 ﻿
 > Beautiful Arts
 
-## Beach View
+## 海边
 
 ![在这里插入图片描述](/img/arts/1.jpg){:height="1920" width="1080"}
 
@@ -13,7 +13,7 @@
 
 ![在这里插入图片描述](/img/arts/5.jpg){:height="1920" width="1080"}
 
-## Animal
+## 动物
 
 ![在这里插入图片描述](/img/arts/6.jpg){:height="1920" width="1080"}
 
