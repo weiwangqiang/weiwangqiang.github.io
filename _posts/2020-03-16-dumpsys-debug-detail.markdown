@@ -187,9 +187,11 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 - **dumpsys activity p [PACKAGE_NAME]**
 
-  打印指定包创建的进程信息，包含：<br>
+  打印指定包创建的进程信息，包含：
 
-  requiredAbi：要求的架构<br>lastSwapPss：内存使用情况<br>lastRequestedGc：上次GC请求<br>
+  - requiredAbi：要求的架构
+  - lastSwapPss：内存使用情况
+  - lastRequestedGc：上次GC请求
 
   ```java
   generic_x86:/ $ dumpsys activity p com.google.android.ext.services
@@ -202,7 +204,11 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 - **dumpsys activity s**
 
-  打印ServiceRecord信息，包含<br>intent：intent信息<br>packageName：包名<br>IntentBindRecord：已绑定该服务的信息
+  打印ServiceRecord信息，包含
+
+  - intent：intent信息
+  - packageName：包名
+  - IntentBindRecord：已绑定该服务的信息
 
   ```java
   
@@ -213,7 +219,11 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 - **dumpsys activity settings**
 
-  打印ServiceRecord信息，包含<br>intent：intent信息<br>packageName：包名<br>IntentBindRecord：已绑定该服务的信息
+  打印ServiceRecord信息，包含
+
+  - intent：intent信息
+  - packageName：包名
+  - IntentBindRecord：已绑定该服务的信息
 
   ```java
   generic_x86:/ $ dumpsys activity settings
@@ -225,7 +235,11 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
 - **dumpsys activity all**
 
-  打印全部的activity，包含<br>生命周期状态<br>View Hierarchy:  view的层次结构
+  打印全部的activity，包含
+
+  - 生命周期状态
+  - View Hierarchy:  view的层次结构
+  - Added Fragment：已添加的fragment
 
   ```java
   generic_x86:/ $ dumpsys activity all
@@ -235,7 +249,12 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
         DecorView@6f37f9c[MainActivity]
           android.widget.LinearLayout{5370da5 V.E...... .......D 0,0-1080,1794}
             android.view.ViewStub{137457a G.E...... ......I. 0,0-0,0 #10203e8 android:id/action_mode_bar_stub}
-            android.widget.FrameLayout{20ff12b V.E...... .......D 0,0-1080,1794 #1020002 android:id/content} ....
+            android.widget.FrameLayout{20ff12b V.E...... .......D 0,0-1080,1794 #1020002 android:id/content} 
+  
+        Added Fragments:
+          #0: ReportFragment{7d762a1 #0 androidx.lifecycle.LifecycleDispatcher.report_fragment_tag}
+          #1: SettingsFragment{ba6d62 #1 id=0x1020002 com.android.tv.settings.MainSettings.SETTINGS_FRAGMENT}
+  ....
   ```
 
 - **dumpsys activity top**
@@ -246,19 +265,15 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
 
   打印对应的启动者
 
-  
-  
   ```java
   mStartActivity:
         packageName=com.demo.Activity processName=com.demo
         launchedFromUid=10043 launchedFromPackage=com.demo.OtherActivity userId=0
   ```
-
+  
 - **dumpsys activity activities**
 
   该命令也能获取到activity是被哪个应用启动的，activity所处的生命周期状态
-
-  
 
   ```java
   * Hist #0: ActivityRecord{3fc59bd u0 com.demo/com.demo.Activity t9}
@@ -268,12 +283,16 @@ soft-vsync: disabled // 当屏幕亮着的，就是disabled，如果关闭屏幕
              state=RESUMED stopped=false delayedResume=false finishing=false
               
   ```
-
   
-
 - **dumpsys activity lastanr**
 
   打印 ANR list信息
+
+#### 快捷命令
+
+```java
+adb shell dumpsys activity  all | grep ACTIVITY // 获取整个系统的activity层级
+```
 
 ### 3、 dumpsys cpuinfo
 

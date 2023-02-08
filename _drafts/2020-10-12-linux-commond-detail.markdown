@@ -107,3 +107,14 @@ ln -fs  /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/loc
 ps -ef | grep java
 ```
 
+## 文本
+
+在最后一行追加文本
+```cmd
+echo 131qeqe >> /Users/Downloads/aa.txt
+```
+
+覆盖原来的文本
+```cmd
+echo 131qeqe > /Users/Downloads/aa.txt
+```
