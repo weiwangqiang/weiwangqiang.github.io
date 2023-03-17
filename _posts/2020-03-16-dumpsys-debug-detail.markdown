@@ -383,6 +383,26 @@ com.android.systemui.theme.dark:0 {
   }
 ```
 
+#### overlay 生效
+
+上面dumpsys overlay，可以看到对应的rro apk是处于STATE_DISABLED状态，即没有生效，我们可以通过如下方式使得rro apk生效
+
+```java
+> cmd overlay enable com.android.systemui.theme.dark
+```
+
+如果需要关闭对应的RRO，可以用如下命令
+
+```java
+> cmd overlay disable com.android.systemui.theme.dark
+```
+
+更多命令见
+
+```cmd
+ cmd overlay -h
+```
+
 ### 9、dumpsys package
 
 - **dumpsys package l**
