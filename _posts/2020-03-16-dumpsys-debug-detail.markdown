@@ -399,8 +399,8 @@ com.android.systemui.theme.dark:0 {
 
 更多命令见
 
-```cmd
- cmd overlay -h
+```java
+> cmd overlay -h
 ```
 
 ### 9、dumpsys package
