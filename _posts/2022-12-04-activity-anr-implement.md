@@ -1152,11 +1152,42 @@ services/core/java/com/android/server/input/InputManagerService.java : notifyNoF
 
 问题2：如果在button点击的时候，在onClick回调同步执行耗时超过5s的任务。点击一次会触发ANR吗？点击2次呢，3次呢？
 
-答：点击一次不会触发ANR，在上个任务结束之前，再次点击会导致ANR。
+答：点击一次不会触发ANR，在上个耗时结束之前，再次点击会导致ANR。原因：onClilck事件是在action up的时候，通过主线程的handler重新post一下触发的。
 
-原因：在第一次点击的时候，在processAnrsLocked()检查ANR过程中，waitQueue虽然不为空，但是还没到超时时间。故不会触发ANR。
+```java
+public boolean onTouchEvent(MotionEvent event) {
+             ....
+             switch (action) {
+                case MotionEvent.ACTION_UP:
+                       if (mPerformClick == null) {
+                           mPerformClick = new PerformClick();
+                       }
+                       // 通过post延迟 触发点击事件
+                       if (!post(mPerformClick)) { 
+                           performClickInternal();
+                       }
+                .....
+}
+```
+故在第一次点击的时候，waitQueue为空；
 
-在第二次分发按键结束的时候，在processAnrsLocked()检查ANR过程中，发现waitQueue 不为空，并且已经有事件超时了，那么就会触发ANR的逻辑
+在第二次点击的时候，由于主线程正被卡住，waitQueue 这个时候会存放两个事件action down和action up，如下图所示：
+
+![](\img/blog_activity_anr/4.png)
+
+等到第二次input事件超时后，通过looper再次调用到dispatchOnce()方法，在processAnrsLocked中检测是否发生anr：通过mAnrTracker获取到最近超时时间，发现当前时间大于超时时间，就会触发ANR。
+```java
+nsecs_t InputDispatcher::processAnrsLocked() {
+    ....
+    nextAnrCheck = std::min(nextAnrCheck, mAnrTracker.firstTimeout());
+    if (currentTime < nextAnrCheck) { // 这个时候当前时间是大于nextAnrCheck 
+        return nextAnrCheck;         
+    }
+    // 触发anr
+    onAnrLocked(connection);
+    return LONG_LONG_MIN;
+}
+```
 
 ## 6.2 Input ANR分类
 
