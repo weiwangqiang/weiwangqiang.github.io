@@ -22,7 +22,7 @@ tags:
 
 Inputdispatcher 则负责消费mInboundQueue中的事件，并将事件转化后发送给app端，他们的关系如下：
 
-![](/Users/file/blog/weiwangqiang.github.io\img/blog_activity_anr/3.png)
+![](D:\myBlog/weiwangqiang.github.io\img/blog_activity_anr/3.png)
 
 # InputDispatcher
 
@@ -242,9 +242,9 @@ bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<Key
 #### dispatchMotionLocked
 
 ```java
-
-bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, std::shared_ptr<MotionEntry> entry,
-                                           DropReason* dropReason, nsecs_t* nextWakeupTime) {
+> frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
+    
+bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, std::shared_ptr<MotionEntry> entry,DropReason* dropReason, nsecs_t* nextWakeupTime) {
     ...
     // 是否是指针事件
     const bool isPointerEvent = isFromSource(entry->source, AINPUT_SOURCE_CLASS_POINTER);
@@ -253,16 +253,16 @@ bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, std::shared_ptr<
     bool conflictingPointerActions = false;
     InputEventInjectionResult injectionResult;
     if (isPointerEvent) {  // 指针事件。（例如触摸屏）
-        // 查找已锁定的触摸窗口目标
+        // 查找已锁定的触摸窗口目标，主要根据读取到的触控事件所属的屏幕displayid、x、y坐标位置等属性来确认目标窗口
+        // 这里不是我们的重点
         injectionResult =
-                findTouchedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime,
-                                               &conflictingPointerActions);
+                findTouchedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime, &conflictingPointerActions);
     } else {  // 非触摸事件。（例如轨迹球）
-       
         injectionResult =
                 findFocusedWindowTargetsLocked(currentTime, *entry, inputTargets, nextWakeupTime);
     }
     if (injectionResult == InputEventInjectionResult::PENDING) {
+        // 如果是pending就直接返回
         return false;
     }
 
