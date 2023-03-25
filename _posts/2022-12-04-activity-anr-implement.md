@@ -160,7 +160,7 @@ void InputDispatcher::startDispatchCycleLocked(nsecs_t currentTime,
         status_t status;
         const EventEntry& eventEntry = *(dispatchEntry->eventEntry);
         ...
-        // 在等待队列上重新排队事件。
+        // 将事件从outboundQueue中移除
         connection->outboundQueue.erase(std::remove(connection->outboundQueue.begin(),
                                                     connection->outboundQueue.end(),
                                                     dispatchEntry));

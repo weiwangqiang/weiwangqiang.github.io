@@ -22,7 +22,7 @@ tags:
 
 Inputdispatcher 则负责消费mInboundQueue中的事件，并将事件转化后发送给app端，他们的关系如下：
 
-![](D:\myBlog/weiwangqiang.github.io\img/blog_activity_anr/3.png)
+![](/Users/file/blog/weiwangqiang.github.io\img/blog_activity_anr/3.png)
 
 # InputDispatcher
 
@@ -40,6 +40,30 @@ Inputdispatcher中，在线程里面调用到dispatchOnce方法，该方法中�
 1. InputDispatcher的mInboundQueue：存储的是从InputReader 送来的输入事件。
 2. Connection的outboundQueue：该队列是存储即将要发送给应用的输入事件。
 3. Connection的waitQueue：队列存储的是已经发给应用的事件，但是应用还未处理完成的。
+
+# InputEventInjectionResult
+
+在处理按键分发过程中，经常会遇到该枚举，对应含义如下
+
+```java
+enum InputEventInjectionResult {
+    /* （仅限内部使用）指定注入挂起且其结果未知 */
+    PENDING = -1,
+
+    /* 事件注射成功. */
+    SUCCEEDED = 0,
+
+    /* 注入失败，因为注入的事件未针对相应的窗口 */
+    TARGET_MISMATCH = 1,
+
+    /* 注入失败，因为没有可用的输入目标。*/
+    FAILED = 2,
+
+    /* Injection failed due to a timeout. */
+    TIMED_OUT = 3,
+}
+```
+
 
 # 事件分发
 
@@ -265,40 +289,19 @@ bool InputDispatcher::dispatchMotionLocked(nsecs_t currentTime, std::shared_ptr<
         // 如果是pending就直接返回
         return false;
     }
-
-    setInjectionResult(*entry, injectionResult);
-    if (injectionResult == InputEventInjectionResult::TARGET_MISMATCH) {
-        return true;
-    }
-    if (injectionResult != InputEventInjectionResult::SUCCEEDED) {
-        CancelationOptions::Mode mode(isPointerEvent
-                                              ? CancelationOptions::CANCEL_POINTER_EVENTS
-                                              : CancelationOptions::CANCEL_NON_POINTER_EVENTS);
-        CancelationOptions options(mode, "input event injection failed");
-        synthesizeCancelationEventsForMonitorsLocked(options);
-        return true;
-    }
-
-    // Add monitor channels from event's or focused display.
+    ....
+    // 从事件或焦点显示添加监视器通道。
     addGlobalMonitoringTargetsLocked(inputTargets, getTargetDisplayId(*entry));
-
-    // Dispatch the motion.
-    if (conflictingPointerActions) {
-        CancelationOptions options(CancelationOptions::CANCEL_POINTER_EVENTS,
-                                   "conflicting pointer actions");
-        synthesizeCancelationEventsForAllConnectionsLocked(options);
-    }
+    // 分发事件
     dispatchEventLocked(currentTime, entry, inputTargets);
     return true;
 }
 
 ```
 
-
-
  ## dispatchEventLocked
 
-dispatchEventLocked 主要是遍历inputTargets，通过prepareDispatchCycleLocked分发事件。prepareDispatchCycleLocked内部又会调用enqueueDispatchEntriesLocked方法
+dispatchEventLocked 主要是遍历inputTargets，通过prepareDispatchCycleLocked分发事件。
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
@@ -317,9 +320,28 @@ void InputDispatcher::dispatchEventLocked(nsecs_t currentTime,
 }
 ```
 
+## prepareDispatchCycleLocked
+
+prepareDispatchCycleLocked内部又会调用enqueueDispatchEntriesLocked方法。
+
+```java
+
+void InputDispatcher::prepareDispatchCycleLocked(nsecs_t currentTime,
+                                                 const sp<Connection>& connection,
+                                                 std::shared_ptr<EventEntry> eventEntry,
+                                                 const InputTarget& inputTarget) {
+  
+    // 不分裂。按原样将事件的调度条目排队。
+    enqueueDispatchEntriesLocked(currentTime, connection, eventEntry, inputTarget);
+}
+```
+
 ## enqueueDispatchEntriesLocked
 
-主要做两个事情：1）将请求模式的调度条目排队。2）启动调度周期。
+主要做两个事情：
+
+- 1）将请求模式的调度条目排队。
+- 2）启动调度周期。
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
@@ -340,9 +362,9 @@ void InputDispatcher::enqueueDispatchEntriesLocked(nsecs_t currentTime,
 }
 ```
 
-## enqueueDispatchEntryLocked
+### enqueueDispatchEntryLocked
 
-enqueueDispatchEntryLocked 会创建一个新的DispatchEntry，然后将DispatchEntry 加入到connection的outboundQueue 中
+enqueueDispatchEntryLocked 会创建一个新的DispatchEntry，然后将DispatchEntry 加入到connection的outboundQueue中
 
 ```java
 > frameworks/native/services/inputflinger/dispatcher/InputDispatcher.cpp
@@ -355,13 +377,13 @@ void InputDispatcher::enqueueDispatchEntryLocked(const sp<Connection>& connectio
     std::unique_ptr<DispatchEntry> dispatchEntry =
             createDispatchEntry(inputTarget, eventEntry, inputTargetFlags);
     ...
-    // 将生成的dispatchEntry 加入到 connection的outboundQueue 中
+    // 将生成的 dispatchEntry 加入到 connection的outboundQueue 中
     connection->outboundQueue.push_back(dispatchEntry.release());
     traceOutboundQueueLength(*connection);
 }
 ```
 
-## startDispatchCycleLocked
+###  startDispatchCycleLocked
 
 该方法主要通过connection 发布最终的事件，至此，InputDispatcher完成事件的发布，并且将发布的事件保存在connection的waitQueue中。
 
@@ -384,7 +406,6 @@ void InputDispatcher::startDispatchCycleLocked(nsecs_t currentTime,
                                  .publishKeyEvent(dispatchEntry->seq ...);
                 break;
             }
-
             case EventEntry::Type::MOTION: {
                 ...
                 // 发布运动事件。
@@ -412,7 +433,7 @@ void InputDispatcher::startDispatchCycleLocked(nsecs_t currentTime,
             }
             return;
         }
-        // 在等待队列上重新排队事件。
+        // 将事件从outboundQueue中移除
         connection->outboundQueue.erase(std::remove(connection->outboundQueue.begin(),
                                                     connection->outboundQueue.end(),
                                                     dispatchEntry));
@@ -480,6 +501,10 @@ private:
 
 ## InputChannel
 
+InputChannel负责将消息发送给到app端，那它是如何做到的呢？
+
+### 通知原理
+
 InputChannel的sendMessage 方法定义如下，
 
 ```java
@@ -495,6 +520,156 @@ status_t InputChannel::sendMessage(const InputMessage* msg) {
     return OK;
 }
 ```
+
+其中fd很关键，当fd 写入消息的时候，会唤醒处于epoll_wait 状态的线程（原理跟handler一样）
+
+那他是如何跟app端的fd绑定的呢？
+
+### 客户端创建FD
+
+在ViewRootImpl的setView方法中，
+
+```java
+> frameworks/base/core/java/android/view/ViewRootImpl.java
+ public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) {
+       if ((mWindowAttributes.inputFeatures
+               & WindowManager.LayoutParams.INPUT_FEATURE_NO_INPUT_CHANNEL) == 0) {
+          mInputChannel = new InputChannel();
+       }
+       try {
+        mOrigWindowType = mWindowAttributes.type;
+        mAttachInfo.mRecomputeGlobalAttributes = true;
+        collectViewAttributes();
+        res = mWindowSession.addToDisplay(mWindow, mSeq, mWindowAttributes,
+                getHostVisibility(), mDisplay.getDisplayId(), mWinFrame,
+                mAttachInfo.mContentInsets, mAttachInfo.mStableInsets,
+                mAttachInfo.mOutsets, mAttachInfo.mDisplayCutout, mInputChannel); // 将mInputChannel 注册到WMS中
+       } catch (RemoteException e) {
+         ...
+       }
+       if (mInputChannel != null) {
+          if (mInputQueueCallback != null) {
+              mInputQueue = new InputQueue();
+              mInputQueueCallback.onInputQueueCreated(mInputQueue);
+          }
+          // 创建app端监听
+          mInputEventReceiver = new WindowInputEventReceiver(mInputChannel,
+                                                             Looper.myLooper());
+        }
+ }
+```
+
+mWindowSession.addToDisplay 对应AIDL实现为
+
+```java
+> frameworks/base/services/core/java/com/android/server/wm/Session.java
+  
+class Session extends IWindowSession.Stub implements IBinder.DeathRecipient {
+    @Override
+    public int addToDisplay(IWindow window .... DisplayCutout.ParcelableWrapper outDisplayCutout, InputChannel outInputChannel) {
+       // mService 即 WindowManagerService
+        return mService.addWindow(this, window, seq, attrs, viewVisibility, displayId, outFrame,
+                outContentInsets, outStableInsets, outOutsets, outDisplayCutout, outInputChannel);
+    }
+
+}
+```
+
+WindowManagerService实现如下
+
+```java
+>  frameworks/base/services/core/java/com/android/server/wm/WindowManagerService.java
+public int addWindow(Session session, IWindow client, int seq,
+            LayoutParams attrs, int viewVisibility, int displayId, Rect outFrame,
+            Rect outContentInsets, Rect outStableInsets, Rect outOutsets,
+            DisplayCutout.ParcelableWrapper outDisplayCutout, InputChannel outInputChannel) {
+
+  final WindowState win = new WindowState(this, session, client, token, parentWindow,
+                    appOp[0], seq, attrs, viewVisibility, session.mUid,
+                    session.mCanAddInternalSystemWindow);
+   final boolean openInputChannels = (outInputChannel != null
+                    && (attrs.inputFeatures & INPUT_FEATURE_NO_INPUT_CHANNEL) == 0);
+   if  (openInputChannels) {
+       // 通过WindowState 打开对应的inputChannel
+       win.openInputChannel(outInputChannel);
+   }
+}
+```
+
+WindowState实现如下
+
+```java
+> frameworks/base/services/core/java/com/android/server/wm/WindowState.java
+  
+void openInputChannel(InputChannel outInputChannel) {
+        String name = getName();
+        InputChannel[] inputChannels = InputChannel.openInputChannelPair(name);
+        mInputChannel = inputChannels[0]; 
+        mClientChannel = inputChannels[1];
+        mInputWindowHandle.inputChannel = inputChannels[0];
+        if (outInputChannel != null) {
+            mClientChannel.transferTo(outInputChannel);
+            mClientChannel.dispose();
+            mClientChannel = null;
+        } else {
+            mDeadWindowEventReceiver = new DeadWindowEventReceiver(mClientChannel);
+        }
+        //  将inputChannel注册到InputManagerService中
+        mService.mInputManager.registerInputChannel(mInputChannel, mInputWindowHandle);
+}
+```
+
+InputManagerService 如下，最后注册到native中
+
+```java
+> frameworks/base/services/core/java/com/android/server/input/InputManagerService.java
+
+// 注册输入通道，以便将其用作输入事件目标。
+public void registerInputChannel(InputChannel inputChannel,
+            InputWindowHandle inputWindowHandle) {
+        nativeRegisterInputChannel(mPtr, inputChannel, inputWindowHandle, false);
+}
+```
+
+### native层注册
+
+nativeRegisterInputChannel 实现如下
+
+```java
+> frameworks/base/services/core/jni/com_android_server_input_InputManagerService.cpp
+  
+
+static void nativeRegisterInputChannel(JNIEnv* env, jclass /* clazz */,
+        jlong ptr, jobject inputChannelObj, jobject inputWindowHandleObj, jboolean monitor) {
+    NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
+
+    sp<InputChannel> inputChannel = android_view_InputChannel_getInputChannel(env,
+            inputChannelObj);
+    if (inputChannel == NULL) {
+        throwInputChannelNotInitialized(env);
+        return;
+    }
+
+    sp<InputWindowHandle> inputWindowHandle =
+            android_server_InputWindowHandle_getHandle(env, inputWindowHandleObj);
+
+    status_t status = im->registerInputChannel(
+            env, inputChannel, inputWindowHandle, monitor);
+    if (status) {
+        std::string message;
+        message += StringPrintf("Failed to register input channel.  status=%d", status);
+        jniThrowRuntimeException(env, message.c_str());
+        return;
+    }
+
+    if (! monitor) {
+        android_view_InputChannel_setDisposeCallback(env, inputChannelObj,
+                handleInputChannelDisposed, im);
+    }
+}
+```
+
+
 
 ## runCommandsLockedInterruptable
 
@@ -540,8 +715,6 @@ void InputDispatcher::postCommandLocked(Command&& command) {
     mCommandQueue.push_back(command);
 }
 ```
-
-
 
 ## 调用栈
 
