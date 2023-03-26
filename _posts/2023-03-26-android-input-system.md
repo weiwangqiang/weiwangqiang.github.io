@@ -16,6 +16,8 @@ tags:
 
 
 
+**整个事件分发到事件的确认过程很长，如果读者只是想大概了解一下，可以直接看末尾总结部分的流程图。**
+
 # 1. 前言
 
 在文章之前，有必要提一下InputReader。其在启动的时候，会创建一个InputReader线程，用于从/dev/input节点获取事件，转换成EventEntry事件加入到InputDispatcher的mInboundQueue。详情见 [Input系统—InputReader线程](http://gityuan.com/2016/12/11/input-reader/)
@@ -63,7 +65,6 @@ enum InputEventInjectionResult {
     TIMED_OUT = 3,
 }
 ```
-
 
 # 2. 事件分发
 
@@ -196,7 +197,7 @@ bool InputDispatcher::dispatchKeyLocked(nsecs_t currentTime, std::shared_ptr<Key
                 // 将来，当设备ID上出现KEY_UP时，请将其删除，并且不要停止当前设备上的密钥重复。
                 entry->repeatCount = mKeyRepeatState.lastKeyEntry->repeatCount + 1;
                 resetKeyRepeatLocked();
-        mKeyRepeatState.nextRepeatTime = LONG_LONG_MAX; // 不要自己生成重复
+                mKeyRepeatState.nextRepeatTime = LONG_LONG_MAX; // 不要自己生成重复
             } else {
                 //不是重复。保存按键down状态，以防我们稍后遇到重复。
                 resetKeyRepeatLocked();
@@ -1283,7 +1284,7 @@ superDispatchTouchEvent 实现也很简单，直接调用ViewGroup 的 dispatchT
 
 view层的事件，最终是由ViewGroup去分发的，在分发的时候，会优先分发给子view
 
-```
+```java
 > frameworks/base/core/java/android/view/ViewGroup.java
 
     @Override
@@ -1454,7 +1455,7 @@ view层的事件，最终是由ViewGroup去分发的，在分发的时候，会�
 
 checkForLongClick用于发送延时消息，触发长按
 
-```JAVA
+```java
 > frameworks/base/core/java/android/view/View.java
   
     private void checkForLongClick(int delayOffset, float x, float y) {
@@ -1534,7 +1535,7 @@ checkForLongClick用于发送延时消息，触发长按
 
 View 的点击事件调用栈如下
 
-```JAVA
+```java
 frameworks/base/core/java/android/view/View.java : View.performClick()
 frameworks/base/core/java/android/view/View.java : View.performClickInternal()
 frameworks/base/core/java/android/view/View.java : PerformClick.run()
@@ -1553,7 +1554,7 @@ frameworks/base/core/java/android/app/Activity.java ： Activity.dispatchTouchEv
 
 在ViewPostImeInputStage 中，如果我们的view处理了对应的事件，就会调用到finish方法，接着调用下一个处理器
 
-```JAVA
+```java
 > frameworks/base/core/java/android/view/ViewRootImpl.java
   
 		protected void apply(QueuedInputEvent q, int result) {
@@ -1595,7 +1596,7 @@ frameworks/base/core/java/android/app/Activity.java ： Activity.dispatchTouchEv
 
 ### 6.2.1 onProcess
 
-```JAVA
+```java
 > frameworks/base/core/java/android/view/ViewRootImpl.java
   
 final class SyntheticInputStage extends InputStage {
@@ -1637,7 +1638,7 @@ onProcess 返回值是FORWARD，会继续调用onDeliverToNext
 
 forward 方法中直接调用onDeliverToNext
 
-```JAVA
+```java
 > frameworks/base/core/java/android/view/ViewRootImpl.java
 
 abstract class InputStage {
@@ -1656,13 +1657,13 @@ onProcess 返回值是FORWARD，在调用onDeliverToNext 的时候，由于next�
 ```java
 > frameworks/base/core/java/android/view/ViewRootImpl.java
 abstract class InputStage {
-			protected void onDeliverToNext(QueuedInputEvent q) {
-            if (mNext != null) {
-                mNext.deliver(q);
-            } else {
-                finishInputEvent(q);
-            }
-        }
+    protected void onDeliverToNext(QueuedInputEvent q) {
+       if (mNext != null) {
+          mNext.deliver(q);
+       } else {
+          finishInputEvent(q);
+       }
+    }
 }
 ```
 
@@ -1670,7 +1671,7 @@ abstract class InputStage {
 
 这里的mReceiver 是WindowInputEventReceiver
 
-```
+```java
 > frameworks/base/core/java/android/view/ViewRootImpl.java
 
 private void finishInputEvent(QueuedInputEvent q) {
@@ -2010,7 +2011,7 @@ frameworks/base/core/java/android/view/ViewRootImpl.java ： ViewPostImeInputSta
 
 ## 事件分发流程图
 
-![image-20230326154203324](/img/blog_activity_dispatch_input_event/5.jpg)
+![image-20230326154203324](/img/blog_activity_dispatch_input_event/5.png)
 
 # 参考文献：
 
