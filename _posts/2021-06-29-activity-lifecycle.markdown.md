@@ -560,7 +560,7 @@ public final class ActivityThread extends ClientTransactionHandler {
         ....
         final boolean shouldSaveState = !r.activity.mFinished && r.isPreHoneycomb();
         if (shouldSaveState) {
-            // 调用onSaveInstanceState周期
+            // android 3之前会在on Pause之前调用onSaveInstanceState周期
             callActivityOnSaveInstanceState(r);
         }
         performPauseActivityIfNeeded(r, reason);
@@ -659,10 +659,23 @@ public final class ActivityThread extends ClientTransactionHandler {
     }
    
     private void callActivityOnStop(ActivityClientRecord r, boolean saveState, String reason) {
+        final boolean shouldSaveState = saveState && !r.activity.mFinished && r.state == null
+                && !r.isPreHoneycomb();
+        final boolean isPreP = r.isPreP();
+        //  11 <= targetSdkVersion < 28,即在android 3 到android 9 之前
+        // OnSaveInstanceState 会在onStop之前调用
+        if (shouldSaveState && isPreP) {
+            callActivityOnSaveInstanceState(r);
+        }
         try {
+            // 调用activity的onstop
             r.activity.performStop(r.mPreserveWindow, reason);
         } catch (SuperNotCalledException e) {
              ....
+        }
+        // targetSdkVersion >= 28,即在android9 以及之后，会在onStop之后调用OnSaveInstanceState
+        if (shouldSaveState && !isPreP) {
+            callActivityOnSaveInstanceState(r);
         }
    }
 }
@@ -817,11 +830,21 @@ public class Activity extends ContextThemeWrapper{
 
 至此，activity完整的生命周期就分析完了。
 
-## 8、完整时序图
+## 8、总结
+
+### 完整时序图
 
 献上呕心沥血画出来的activity生命周期时序图！
 
 <img src="/img/blog_activity_lifecycle/lifecycler_uml.png" width="100%" height="60%">
+
+### OnSaveInstanceState 周期
+
+OnSaveInstanceState 调用的时机在不同android版本都不一样，分别如下：
+
+1. targetSdkVersion < 11：即android 3之前会在onPause之前调用onSaveInstanceState周期。
+2. 11 <= targetSdkVersion < 28：即在android 3 到android 9 之前，OnSaveInstanceState 会在onPause之后，onStop之前调用。
+3. targetSdkVersion >= 28：即在android9 以及之后，会在onStop之后，onDestroy之前调用OnSaveInstanceState。
 
 ## 后记
 
