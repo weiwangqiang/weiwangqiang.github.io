@@ -15,7 +15,7 @@ tags:
 
 ## 1、查找命令：grep
 
-### 在当前目录和所有子目录下，查找包含`keyword` 的文件，输出包含文件和行号
+在当前目录和所有子目录下，查找包含`keyword` 的文件，输出包含文件和行号
 
 ```shell
 
@@ -23,7 +23,7 @@ $ grep -n "keyword" -r ./
 
 ```
 
-### Android下的指定路径，执行如下命令可以找到包含该`string`的apk或文件
+Android下的指定路径，执行如下命令可以找到包含该`string`的apk或文件
 
 ```shell
 
@@ -41,7 +41,7 @@ $ cat demo.txt | grep -E "keyword1|keyword2"
 
 ## 2、查找命令：find
 
-### 查找指定文件的详细路径
+查找指定文件的详细路径
 
 ```shell
 
@@ -51,9 +51,9 @@ $ find . -name "demo*" // 查找文件名开头是"demo" 的文件
 ```
 
 
-## 2、删除命令：rm
+## 3、删除命令：rm
 
-### 删除文件或文件夹
+删除文件或文件夹
 
 ```java
 
@@ -61,7 +61,7 @@ $ rm -r demo.txt demo
 
 ```
 
-### 强制删除文件或文件夹，*谨慎使用*
+强制删除文件或文件夹，*谨慎使用*
 
 ```shell
 
@@ -70,7 +70,7 @@ $ rm -rf demo.txt demo
 ```
 
 
-## 3、环境变量
+## 4、环境变量
 
 ```bash
 > env // 查看环境变量
@@ -78,7 +78,7 @@ $ rm -rf demo.txt demo
 
 ```
 
-## 4、软链接
+## 5、软链接
 
 我们可以通过软链接方式创建源文件的快捷方式
 
@@ -107,7 +107,7 @@ ln -fs  /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl /usr/loc
 ps -ef | grep java
 ```
 
-## 文本
+## 6、文本
 
 在最后一行追加文本
 ```cmd
@@ -118,3 +118,14 @@ echo 131qeqe >> /Users/Downloads/aa.txt
 ```cmd
 echo 131qeqe > /Users/Downloads/aa.txt
 ```
+
+## 7、selinux
+
+- [理解Linux下的SELinux](https://zhuanlan.zhihu.com/p/86813709)
+
+Security Enhanced Linux(SELinux) 为Linux 提供了一种增强的安全机制，可以通过如下方式关掉该安全机制，降低权限问题
+
+```java
+setenforce 0
+```
+
