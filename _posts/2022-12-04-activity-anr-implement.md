@@ -885,7 +885,7 @@ ProcessErrorStateRecord.appNotResponding() 方法很长，主要做
 - 转储堆栈信息到跟踪文件中
 - 发出显示anr对话框的消息
 
-```JAVA
+```java
 > frameworks/base/services/core/java/com/android/server/am/ProcessErrorStateRecord.java
 
 void appNotResponding(String activityShortComponentName, ApplicationInfo aInfo ...) {

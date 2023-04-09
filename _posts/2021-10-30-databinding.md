@@ -22,7 +22,7 @@ tags:
 
 要使用ViewBinding，只需要在gradle 添加如下配置即可
 
-```cmd
+```java
 android {
         ...
         viewBinding {
@@ -33,7 +33,7 @@ android {
 
 如果需要在生成绑定类时忽略某个布局文件，请将 tools:viewBindingIgnore="true" 属性添加到相应布局文件的根视图中：
 
-```cmd
+```java
 <LinearLayout
         ...
             tools:viewBindingIgnore="true" >
@@ -46,7 +46,7 @@ android {
 
 比如，创建了一个activity_view.xml
 
-```cmd
+```java
 <LinearLayout 
            ...>
     <TextView

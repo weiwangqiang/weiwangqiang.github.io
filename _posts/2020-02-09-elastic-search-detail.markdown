@@ -94,18 +94,19 @@ http://localhost:9200/demo/_doc/1?_source=name # 返回指定列,包含元数据
 http://localhost:9200/demo/_doc/1/_source?_source=name # 返回文档指定列
 http://localhost:9200/demo/_doc/_count # 查询该类型的个数
 http://localhost:9200/demo/_doc/_search?size=1&from=1 # 分页查询，下标从0开始，size默认为10
+http://localhost:9200/demo/_mapping # 查看“demo”索引的字段属性映射
 ```
 
-#### 更新（POST）
+#### 更新
 
 ```java
-http://localhost:9200/demo/_doc/1 # 覆盖更新，指定需要更新的id
+POST http://localhost:9200/demo/_doc/1 # 覆盖更新，指定需要更新的id
 {
   "name": "小明",
   "age": 18
 }
 
-http://localhost:9200/demo/_doc/1/_update # 部分更新，指定需要更新的id
+POST http://localhost:9200/demo/_doc/1/_update # 部分更新，指定需要更新的id
 {
    "doc":{
        "name":"小红"
@@ -113,18 +114,32 @@ http://localhost:9200/demo/_doc/1/_update # 部分更新，指定需要更新的
 }
 
 # 脚本可以在 update API中用来改变 _source 的字段内容， 它在更新脚本中称为 ctx._source 。
-http://localhost:9200/demo/_doc/1/_update # age列自增加，指定需要更新的id
+POST http://localhost:9200/demo/_doc/1/_update # age列自增加，指定需要更新的id
 {
  	"script":"ctx._source.age+=1"
 }
 
 ```
 
-#### <span id="delete">删除（DELETE）</span>
+添加新的**deleted**属性
 
 ```java
-http://localhost:9200/demo/_doc/1 # 指定需要删除的id
-http://localhost:9200/demo # 指定需要删除的索引
+PUT http://localhost:9200/demo/_mapping?pretty
+
+{
+  "properties": {
+      "deleted": {"type":"boolean"} # 添加新的deleted 属性，类型为Boolean
+  }
+}
+```
+
+
+
+#### 删除
+
+```java
+DELETE http://localhost:9200/demo/_doc/1 # 指定需要删除的id
+DELETE http://localhost:9200/demo # 指定需要删除的索引
 ```
 
 #### 批处理
@@ -505,7 +520,17 @@ http://localhost:9200/demo/_mapping  # 设置索引的mapping
 
 更多详情见 [排序](https://www.elastic.co/guide/cn/elasticsearch/guide/current/_Sorting.html)
 
-## 6、后记
+## 6、运维
+
+- 查看表的健康状态：http://localhost:9200/_cat/indices?v
+
+```java
+health status index    uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   v1       QsHSCQunT26UnUDDX_uqRw   1   1          1            0      6.4kb          6.4kb
+yellow open   v2       wpryqVpBQe6eakz2uT79xA   1   1          1            0      6.9kb          6.9kb
+```
+
+## 7、后记
 
 当然elasticSearch的功能远不止这些，由于篇幅关系，本文就不列举过多的接口，更多文档可以参考 [ElasticSearch文档](https://www.elastic.co/guide/en/elasticsearch/reference/7.x/elasticsearch-intro.html) 这里可以看到各个版本的文档信息。
 
