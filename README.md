@@ -39,6 +39,12 @@
 服务器启动，在博客根路径下执行如下命令即可
 
 ```java
- jekyll server
+jekyll server
+```
+
+在服务启动后，会在控制台打印访问地址，比如
+
+```java
+Server address: http://127.0.0.1:4000/
 ```
 
