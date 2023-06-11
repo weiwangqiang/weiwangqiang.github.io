@@ -136,6 +136,14 @@ private IServiceConnection getServiceDispatcherCommon(ServiceConnection c,
 
 ## 4.1 bindServiceLocked
 
+其中：
+
+- ServiceRecord：用于描述一个Service
+- processRecord：一个进程的信息
+- ConnectionRecord：用于描述应用程序进程和Service建立的通信
+- AppBindRecord：维护Service与应用进程的关联，包含通信记录ArraySet<ConnectionRecord>，绑定Service的intent。
+- IntentBindRecord：描述绑定Service的intent。
+
 ```java
 int bindServiceLocked(IApplicationThread caller, IBinder token, Intent service,
         String resolvedType, final IServiceConnection connection ...)
@@ -172,6 +180,7 @@ int bindServiceLocked(IApplicationThread caller, IBinder token, Intent service,
                 return 0;
             }
         }
+        // b.intent.received 表示已接收到绑定Service时返回的binder对象。
         if (s.app != null && b.intent.received) {
             // 服务已经在运行，可以直接调用connected
             //如果客户端尝试启动/连接的是别名，那么需要将别名组件名称传递给客户端。
@@ -183,7 +192,8 @@ int bindServiceLocked(IApplicationThread caller, IBinder token, Intent service,
             } catch (Exception e) {
             }
 
-            // 如果这是连接回此绑定的第一个应用， 该服务此前曾要求被告知何时rebind，则需要调用requestServiceBindingLocked。
+            // 如果这是连接回此绑定的第一个应用， 并且Service已经调用过onUnBind方法
+            // 则需要调用requestServiceBindingLocked。
             if (b.intent.apps.size() == 1 && b.intent.doRebind) {
                 requestServiceBindingLocked(s, b.intent, callerFg, true);
             }
@@ -234,17 +244,24 @@ private void realStartServiceLocked(ServiceRecord r, ProcessRecord app,
 ```java
 private final boolean requestServiceBindingLocked(ServiceRecord r, IntentBindRecord i,
             boolean execInFg, boolean rebind) throws TransactionTooLargeException {
-      try {
-          // 启动计时
-          bumpServiceExecutingLocked(r, execInFg, "bind",
-                  OomAdjuster.OOM_ADJ_REASON_BIND_SERVICE);
-          // 通知客户端调用bind
-          r.app.getThread().scheduleBindService(r, i.intent.getIntent(), rebind,
-                  r.app.mState.getReportedProcState());
-          ....
-      }  catch (RemoteException e) {
-          .....
-          return false;
+	   // i.requested:表示是否发送过绑定Service的请求，这里为true
+       // i.apps.size():表示当前intent绑定Service的应用进程个数
+	   if ((!i.requested || rebind) && i.apps.size() > 0) {
+            try {
+                // 启动计时
+                bumpServiceExecutingLocked(r, execInFg, "bind",
+                        OomAdjuster.OOM_ADJ_REASON_BIND_SERVICE);
+                // 通知客户端调用bind
+                r.app.getThread().scheduleBindService(r, i.intent.getIntent(), rebind,
+                        r.app.mState.getReportedProcState());
+                if (!rebind) {
+                    i.requested = true;
+                }
+                i.hasBound = true;
+                i.doRebind = false;
+            } catch (TransactionTooLargeException e) {
+                ....
+            }
       }
       return true;
 }
@@ -283,7 +300,7 @@ public final void scheduleBindService(IBinder token, Intent intent,
         Service s = mServices.get(data.token);
         try {
            if (!data.rebind) {
-               // 不是重新bind，调用onBind方法
+               // 不是重新bind，即没有绑定过，调用onBind方法
                IBinder binder = s.onBind(data.intent);
                // 将binder对象传给AMS
                ActivityManager.getService().publishService(
@@ -405,7 +422,7 @@ private static class InnerConnection extends IServiceConnection.Stub {
 
 connect方法中会做切线程的动作，RunConnection 内部实际是调用到doConnected 方法。
 
-```
+```java
 static final class ServiceDispatcher {
   public void connected(ComponentName name, IBinder service, boolean dead) {
       if (mActivityExecutor != null) {
@@ -468,6 +485,12 @@ public void doConnected(ComponentName name, IBinder service, boolean dead) {
 
 # 总结
 
+## 技术点
+
+- 如果当前应用是第一个与Service绑定，并且Service已经调用过unUnBind方法，则会调用Service的onRebind方法
+
+
+
 对应的uml图如下
 
-![](\img\blog_bind_service_flow\1.png)
+![](\img\blog_bind_service_flow\1.png) 

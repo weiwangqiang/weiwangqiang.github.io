@@ -127,7 +127,7 @@ ComponentName startServiceLocked(IApplicationThread caller, Intent service ...) 
 
 ## 3.3 startServiceInnerLocked
 
-内部有两个startServiceInnerLocked 的重载，这里只分析最后一个
+内部有两个startServiceInnerLocked 的重载，这里只分析最后一个：
 
 ```java
 ComponentName startServiceInnerLocked(ServiceMap smap, Intent service, ServiceRecord r ...) throws TransactionTooLargeException {
@@ -150,6 +150,19 @@ ComponentName startServiceInnerLocked(ServiceMap smap, Intent service, ServiceRe
 
 ```
 
+参数中的ServiceRecord 是用于描述Servic，结构如下
+
+> 代码路径：frameworks\base\services\core\java\com\android\server\am\ServiceRecord.java
+
+```java
+final class ServiceRecord extends Binder implements ComponentName.WithComponentName {
+    final ComponentName name; // service 组件.
+    private final ArrayMap<IBinder, ArrayList<ConnectionRecord>> connections
+            = new ArrayMap<IBinder, ArrayList<ConnectionRecord>>();
+                            // 所有的绑定Service的客户端
+}
+```
+
 ## 3.4 bringUpServiceLocked
 
 ```java
@@ -164,6 +177,7 @@ private String bringUpServiceLocked(ServiceRecord r, int intentFlags ...) throws
         return null;
     }
     ....
+    // 描述运行的应用程序进程的信息
     ProcessRecord app;
     if (!isolated) {
         // 获取进程信息
@@ -172,6 +186,7 @@ private String bringUpServiceLocked(ServiceRecord r, int intentFlags ...) throws
             final IApplicationThread thread = app.getThread();
             final int pid = app.getPid();
             final UidRecord uidRecord = app.getUidRecord();
+            // 如果运行Service的应用进程存在，就启动Service
             if (thread != null) {
                 try {
                     app.addPackage(r.appInfo.packageName, r.appInfo.longVersionCode,
@@ -190,6 +205,7 @@ private String bringUpServiceLocked(ServiceRecord r, int intentFlags ...) throws
     // App未运行 -- 启动并排队此服务记录，在应用程序启动时执行。
     if (app == null && !permissionsReviewRequired && !packageFrozen) {
         ....
+        // 创建进程，其中procName用来描述Service想要在哪个进程上运行，默认是当前进程
         app = mAm.startProcessLocked(procName, r.appInfo, true, intentFlags,
                     hostingRecord, ZYGOTE_POLICY_FLAG_EMPTY, false, isolated);
         if (app == null) {
