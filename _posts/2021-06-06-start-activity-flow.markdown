@@ -600,7 +600,7 @@ private boolean resumeTopActivityInnerLocked(ActivityRecord prev, ActivityOption
 
 ### 2.5 TaskFragment
 
-> 代码路径：platform\frameworks_base\services\core\java\com\android\server\wm\TaskFragment.java
+> 代码路径：frameworks\base\services\core\java\com\android\server\wm\TaskFragment.java
 
 TaskFragment是一个基本的容器，可用于包含活动或其他TaskFragment，也能够管理活动生命周期和更新活动的可见性。
 
