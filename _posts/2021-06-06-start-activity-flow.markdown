@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "framework之Activity 创建流程"
+title:      "【framework】startActivity流程"
 subtitle:   " \"带你细看Android13上activity的启动流程\""
 date:       2021-06-08 22:30:00
 author:     "Weiwq"
@@ -20,7 +20,7 @@ tags:
 
 如果不想看代码，可以直接看对应的时序图。
 
-## 1. startActivity流程
+## 1 startActivity流程
 
 ### 1.1 Activity
 
@@ -47,7 +47,7 @@ public class Activity extends ContextThemeWrapper{
 }
 ```
 
-###　1.2 Instrumentation
+### 1.2 Instrumentation
 
 > 代码路径：frameworks\base\core\java\android\app\Instrumentation.java
 
@@ -102,7 +102,7 @@ public class Instrumentation {
     }
 ```
 
-###　1.3 ActivityTaskManager
+### 1.3 ActivityTaskManager
 
 > 代码路径：frameworks\base\core\java\android\app\ActivityTaskManager.java
 
@@ -191,15 +191,13 @@ public class BinderInternal {
 }	
 ```
 
-所以，客户端是通过ServiceManager对象拿到指定的service，再进行相关通信。
-
 ### 1.4 时序图
 
 startActivity对应的时序图如下：
 
 <img src="/img/blog_start_activity_flow/activity_clinet.png" width="100%" height="40%"> 
 
-## 2、ATMS流程
+## 2 ATMS流程
 
 ### 2.1 ActivityTaskManagerService
 
@@ -1221,7 +1219,8 @@ private Activity performLaunchActivity(ActivityClientRecord r, Intent customInte
                      r.ident, app, r.intent, r.activityInfo, title, r.parent,
                      r.embeddedID, r.lastNonConfigurationInstances, config,
                      r.referrer, r.voiceInteractor, window, r.configCallback,
-                     r.assistToken);             if (customIntent != null) {
+                     r.assistToken);            
+             if (customIntent != null) {
                  activity.mIntent = customIntent;
              }
              r.lastNonConfigurationInstances = null;
