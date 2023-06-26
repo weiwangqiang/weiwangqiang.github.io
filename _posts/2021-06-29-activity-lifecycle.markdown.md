@@ -285,27 +285,13 @@ lifecycleItem是ResumeActivityItem的实例。
 > 代码路径：frameworks\base\core\java\android\app\servertransaction\ResumeActivityItem.java
 
 ```java
-public class ResumeActivityItem extends ActivityLifecycleItem {
-    .....
-    @Override
-    public void execute(ClientTransactionHandler client, IBinder token,
-            PendingTransactionActions pendingActions) {
-        // 调用了ActivityThread的handleResumeActivity
-        client.handleResumeActivity(token, true /* finalStateRequest */, mIsForward,
-                "RESUME_ACTIVITY");
-    }
-    
-    @Override
-    public void postExecute(ClientTransactionHandler client, IBinder token,
-            PendingTransactionActions pendingActions) {
-        try {
-            // 通知ATMS 当前完成onResume,
-            ActivityTaskManager.getService().activityResumed(token);
-        } catch (RemoteException ex) {
-            throw ex.rethrowFromSystemServer();
-        }
-    }
-}
+ @Override
+ public void execute(ClientTransactionHandler client, IBinder token,
+         PendingTransactionActions pendingActions) {
+     // 调用了ActivityThread的handleResumeActivity
+     client.handleResumeActivity(token, true /* finalStateRequest */, mIsForward,
+             "RESUME_ACTIVITY");
+ }
 ```
 
 很好，又回到了ActivityThread（这家伙出镜率相当高）
@@ -361,7 +347,68 @@ final void performResume(boolean followedByPause, String reason) {
 }
 ```
 
-## 5、中场小结
+### 4.5 通知服务端
+#### 4.5.1 ResumeActivityItem
+
+> 代码路径：frameworks\base\core\java\android\app\servertransaction\ResumeActivityItem.java
+
+通知动作是在postExecute方法中执行的
+```java
+@Override
+public void postExecute(ClientTransactionHandler client, IBinder token,
+        PendingTransactionActions pendingActions) {
+    // 通知服务端
+    ActivityClient.getInstance().activityResumed(token, client.isHandleSplashScreenExit(token));
+}
+```
+#### 4.5.2 ActivityClient
+
+> 代码路径：frameworks\base\core\java\android\app\ActivityClient.java
+
+activityResumed方法通过getActivityClientController() 获取ActivityClientController的binder对象。
+
+```java
+public void activityResumed(IBinder token, boolean handleSplashScreenExit) {
+    try {
+        getActivityClientController().activityResumed(token, handleSplashScreenExit);
+    } catch (RemoteException e) {
+        e.rethrowFromSystemServer();
+    }
+}
+```
+
+#### 4.5.3 ActivityClientController
+
+> 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityClientController.java
+
+activityResumed() 内部调用ActivityRecord的静态方法activityResumedLocked
+
+```java
+@Override
+public void activityResumed(IBinder token, boolean handleSplashScreenExit) {
+    final long origId = Binder.clearCallingIdentity();
+    synchronized (mGlobalLock) {
+        ActivityRecord.activityResumedLocked(token, handleSplashScreenExit);
+    }
+    Binder.restoreCallingIdentity(origId);
+}
+```
+
+#### 4.5.4 ActivityRecord
+
+>  代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
+
+```java
+    static void activityResumedLocked(IBinder token, boolean handleSplashScreenExit) {
+        final ActivityRecord r = ActivityRecord.forTokenLocked(token);
+        r.setCustomizeSplashScreenExitAnimation(handleSplashScreenExit);
+        r.setSavedState(null /* savedState */);
+        r.mDisplayContent.handleActivitySizeCompatModeIfNeeded(r);
+        r.mDisplayContent.mUnknownAppVisibilityController.notifyAppResumedFinished(r);
+    }
+```
+
+## 5. 中场小结
 
 经过上面的分析，想必大家对activity周期调用链路有了一定的了解（绕晕了 doge），其中最重要的地方是这里
 
@@ -466,13 +513,13 @@ public abstract class ActivityLifecycleItem extends ClientTransactionItem {
 3. 通过performLifecycleSequence 方法调用ActivityThread的handleStartActivity，触发onStart周期。
 4. 由ResumeActivityItem 触发onResume周期。
 
-## 5、onPause
+## 6. onPause
 
-### 5.1 AMS端
+### 6.1 AMS端
 
 在[【framework】startActivity流程](https://weiwangqiang.github.io/2021/06/08/start-activity-flow/) 中，我们知道，会调用startPausing方法来触发栈顶activity进入onPause状态
 
-#### 5.1.1 TaskFragment
+#### 6.1.1 TaskFragment
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\TaskFragment.java
 
@@ -511,7 +558,7 @@ void schedulePauseActivity(ActivityRecord prev, boolean userLeaving,
 }
 ```
 
-### 5.2 PauseActivityItem
+### 6.2 PauseActivityItem
 
 > 代码路径：frameworks\base\core\java\android\app\servertransaction\PauseActivityItem.java
 
@@ -536,7 +583,7 @@ void schedulePauseActivity(ActivityRecord prev, boolean userLeaving,
 
 来到了ActivityThread的handlePauseActivity方法
 
-### 5.3 ActivityThread
+### 6.3 ActivityThread
 
 > 代码路径： frameworks\base\core\java\android\app\ActivityThread.java
 
@@ -589,7 +636,7 @@ private void performPauseActivityIfNeeded(ActivityClientRecord r, String reason)
 
 Instrumentation的callActivityOnPause方法是直接掉用activity的performPause
 
-### 5.4 Activity
+### 6.4 Activity
 
 ```java
 final void performPause() {
@@ -600,11 +647,11 @@ final void performPause() {
 }
 ```
 
-### 5.5 通知服务端
+### 6.5 通知服务端
 
 在PauseActivityItem的postExecute 方法中，会通过IActivityClientController 接口通知到ActivityClientController
 
-#### 5.5.1 ActivityClientController
+#### 6.5.1 ActivityClientController
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityClientController.java
 
@@ -622,7 +669,7 @@ final void performPause() {
  }
 ```
 
-#### 5.5.2 ActivityRecord
+#### 6.5.2 ActivityRecord
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
 
@@ -647,7 +694,7 @@ final void performPause() {
  }
 ```
 
-#### 5.5.3 TaskFragment
+#### 6.5.3 TaskFragment
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\TaskFragment.java
 
@@ -675,11 +722,11 @@ void completePause(boolean resumeNext, ActivityRecord resuming) {
 }
 ```
 
-## 6、onStop
+## 7. onStop
 
-### 6.1 AMS 端
+### 7.1 AMS 端
 
-#### 6.1.1 ActivityThread
+#### 7.1.1 ActivityThread
 
 > 代码路径：frameworks\base\core\java\android\app\ActivityThread.java
 
@@ -730,7 +777,7 @@ private class Idler implements MessageQueue.IdleHandler {
 }
 ```
 
-#### 6.1.2 ActivityClientController
+#### 7.1.2 ActivityClientController
 
 > 代码路径： frameworks\base\services\core\java\com\android\server\wm\ActivityClientController.java
 
@@ -749,7 +796,7 @@ public void activityIdle(IBinder token, Configuration config, boolean stopProfil
 }
 ```
 
-#### 6.1.3 ActivityTaskSupervisor
+#### 7.1.3 ActivityTaskSupervisor
 
 > 代码路径： frameworks\base\services\core\java\com\android\server\wm\ActivityTaskSupervisor.java
 
@@ -791,7 +838,7 @@ private void processStoppingAndFinishingActivities(ActivityRecord launchedActivi
 
 我们先看stopIfPossible 方法
 
-#### 6.1.4 ActivityRecord
+#### 7.1.4 ActivityRecord
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
 
@@ -822,7 +869,7 @@ void stopIfPossible() {
 
 所以，我们直接看StopActivityItem的execute方法实现。
 
-### 6.2 StopActivityItem
+### 7.2 StopActivityItem
 
 > 代码路径： frameworks\base\core\java\android\app\servertransaction\StopActivityItem.java
 
@@ -837,7 +884,7 @@ public void execute(ClientTransactionHandler client, IBinder token,
 
 回到ActivityThread的handleStopActivity方法
 
-### 6.3 ActivityThread
+### 7.3 ActivityThread
 
 > 代码路径： frameworks\base\core\java\android\app\ActivityThread.java
 
@@ -890,7 +937,7 @@ private void callActivityOnStop(ActivityClientRecord r, boolean saveState, Strin
 
 ```
 
-### 6.4 Activity
+### 7.4 Activity
 
 最终调用的是Activity的performStop方法
 
@@ -904,9 +951,9 @@ public class Activity extends ContextThemeWrapper{
 }
 ```
 
-### 6.5 通知服务端
+### 7.5 通知服务端
 
-#### 6.5.1 StopActivityItem
+#### 7.5.1 StopActivityItem
 
 StopActivityItem的postExecute 方法调用的实际是activityThread的reportStop 方法
 
@@ -917,7 +964,7 @@ public void postExecute(ClientTransactionHandler client, IBinder token,
 }
 ```
 
-#### 6.5.2 ActivityThread
+#### 7.5.2 ActivityThread
 
 > 代码路径： frameworks\base\core\java\android\app\ActivityThread.java
 
@@ -929,7 +976,7 @@ ActivityThread的reportStop 使用Handler post了一个runnable
     }
 ```
 
-#### 6.5.3 StopInfo
+#### 7.5.3 StopInfo
 
 > 代码路径： frameworks\base\core\java\android\app\servertransaction\PendingTransactionActions.java
 
@@ -945,7 +992,7 @@ public void run() {
 }
 ```
 
-#### 6.5.4 ActivityClientController
+#### 7.5.4 ActivityClientController
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityClientController.java
 
@@ -970,7 +1017,7 @@ public void run() {
     }
 ```
 
-#### 6.5.5 ActivityRecord
+#### 7.5.5 ActivityRecord
 
 > 代码路径： frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
 
@@ -992,13 +1039,13 @@ void activityStopped(Bundle newIcicle, PersistableBundle newPersistentState,
 
 
 
-## 7、onDestory
+## 8. onDestory
 
-### 7.1 AMS端
+### 8.1 AMS端
 
 在onStop的流程中，如果activity正在finishing中，就会调用ActivityRecord的destroyIfPossible方法
 
-#### 7.1.1 ActivityRecord
+#### 8.1.1 ActivityRecord
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
 
@@ -1060,7 +1107,7 @@ destroyImmediately 实现如下
 
 <img src="/img/blog_activity_lifecycle/5.png" width="100%" height="40%">
 
-### 7.2 onStop调用
+### 8.2 onStop调用
 
 如果activity是调用finish方法退出的，那在发送DestroyActivityItem的时候，会同时触发onStop方法。
 
@@ -1108,7 +1155,7 @@ public class TransactionExecutorHelper {
 
 接下来的流程就跟上面的一样，这里不再赘述，直接看onDestory周期。
 
-### 7.3 DestroyActivityItem
+### 8.3 DestroyActivityItem
 
 上面通过debug知道ATMS传过来的lifecycleItem是DestroyActivityItem。注意，这里并没有将执行结果通知ATMS。
 
@@ -1130,7 +1177,7 @@ public class DestroyActivityItem extends ActivityLifecycleItem {
 }
 ```
 
-### 7.4 ActivityThread
+### 8.4 ActivityThread
 
 ```java
 public void handleDestroyActivity(IBinder token, boolean finishing, int configChanges,
@@ -1180,7 +1227,7 @@ ActivityClientRecord performDestroyActivity(IBinder token, boolean finishing,
 
 最后来到了activity里面
 
-### 7.5 Activity
+### 8.5 Activity
 
 ```java
 public class Activity extends ContextThemeWrapper{
@@ -1196,9 +1243,9 @@ public class Activity extends ContextThemeWrapper{
 }
 ```
 
-### 7.6 通知服务端
+### 8.6 通知服务端
 
-#### 7.6.1 ActivityThread
+#### 8.6.1 ActivityThread
 
 > 代码路径： frameworks\base\core\java\android\app\ActivityThread.java
 
@@ -1212,7 +1259,7 @@ public void handleDestroyActivity(IBinder token, boolean finishing, int configCh
 }
 ```
 
-#### 7.6.2 ActivityClientController
+#### 8.6.2 ActivityClientController
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\wm\ActivityClientController.java
 
@@ -1232,7 +1279,7 @@ public void activityDestroyed(IBinder token) {
 }
 ```
 
-#### 7.6.3 ActivityRecord
+#### 8.6.3 ActivityRecord
 
 > 代码路径： frameworks\base\services\core\java\com\android\server\wm\ActivityRecord.java
 
@@ -1250,15 +1297,15 @@ public void activityDestroyed(IBinder token) {
 
 至此，activity完整的生命周期就分析完了。
 
-## 8、总结
+## 9. 总结
 
-### 8.1 完整时序图
+### 9.1 完整时序图
 
 献上呕心沥血画出来的activity生命周期时序图！
 
 <img src="/img/blog_activity_lifecycle/lifecycler_uml.png" width="100%" height="60%">
 
-### 8.2 OnSaveInstanceState 周期
+### 9.2 OnSaveInstanceState 周期
 
 OnSaveInstanceState 调用的时机在不同android版本都不一样，分别如下：
 
