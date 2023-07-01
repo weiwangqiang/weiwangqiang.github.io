@@ -26,7 +26,7 @@ tags:
 
 ```java
 @Override
-public ComponentName startService(In tent service) {
+public ComponentName startService(Intent service) {
     warnIfCallingFromSystemProcess();
     return startServiceCommon(service, false, mUser);
 }
@@ -150,7 +150,7 @@ ComponentName startServiceInnerLocked(ServiceMap smap, Intent service, ServiceRe
 
 ```
 
-参数中的ServiceRecord 是用于描述Servic，结构如下
+参数中的ServiceRecord 是用于描述Service，结构如下
 
 > 代码路径：frameworks\base\services\core\java\com\android\server\am\ServiceRecord.java
 
@@ -547,7 +547,7 @@ public void serviceDoneExecuting(IBinder token, int type, int startId, int res) 
 
 ## 7.1 serviceDoneExecutingLocked
 
-这里的type是SERVICE_DONE_EXECUTING_ANON
+传入的type是SERVICE_DONE_EXECUTING_ANON
 
 ```java
     void serviceDoneExecutingLocked(ServiceRecord r, int type, int startId, int res,
