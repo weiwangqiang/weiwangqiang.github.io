@@ -47,7 +47,6 @@ adb shell setprop debug.hwui.overdraw show
 
 ![在这里插入图片描述](/img/blog_android_debug_code/3.png){:height="250" width="250"}
 
-
 3、查看dirty区域：
 
 ```java
@@ -137,7 +136,7 @@ adb shell setprop debug.hwui.profile.maxframes #{value}
      
 ```
 
-8、
+8、开启调试非矩形剪辑操作
 
 ```java
 
@@ -151,6 +150,22 @@ adb shell setprop debug.hwui.profile.maxframes #{value}
 adb shell setprop debug.hwui.show_non_rect_clip #{value}
 	  
 ```
+9、开启\关闭硬件加速
+
+开启硬件加速
+
+```java
+adb shell setprop debug.hwui.renderer opengl
+```
+
+启用 Skia 渲染
+
+```java
+adb shell setprop  debug.hwui.renderer skiagl 
+```
+
+
+
 # 内存分析
 
 
