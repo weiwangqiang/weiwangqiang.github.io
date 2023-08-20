@@ -503,6 +503,30 @@ int startActivityInner(final ActivityRecord r, ActivityRecord sourceRecord,
 
 startActivityInner 负责的任务就是准备好堆栈，为启动activity做最后的准备。
 
+其中computeLaunchingTaskFlags 是负责处理启动模式相关的逻辑
+
+```java
+private void computeLaunchingTaskFlags() {
+   ....
+   if (mInTask == null) { // 表示activity要加入的栈不存在
+       if (mSourceRecord == null) {
+           // activity 还没有被启动，在这种情况下，我们都会创建一个新的任务栈
+           if ((mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) == 0 && mInTask == null) {
+               Slog.w(TAG, "startActivity called from non-Activity context; forcing " +
+                       "Intent.FLAG_ACTIVITY_NEW_TASK for: " + mIntent);
+               mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;
+           }
+       } else if (mSourceRecord.launchMode == LAUNCH_SINGLE_INSTANCE) {
+           // 当前activity是由singleInstance的activity启动，新activity则需要在自己的任务栈中启动
+           mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;
+       } else if (isLaunchModeOneOf(LAUNCH_SINGLE_INSTANCE, LAUNCH_SINGLE_TASK)) {
+           // 如果设置了singeInstance或者singleTask，也需要创建一个新栈
+           mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;
+       }
+   }
+}
+```
+
 接下来就把流程交给了RootWindowContainer的resumeFocusedStacksTopActivities方法。
 
 ### 2.3 RootWindowContainer
