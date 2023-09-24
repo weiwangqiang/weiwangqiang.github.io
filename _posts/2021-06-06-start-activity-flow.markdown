@@ -1306,6 +1306,45 @@ public void callActivityOnCreate(Activity activity, Bundle icicle) {
 
 > 代码路径： frameworks\base\core\java\android\app\Activity.java
 
+#### attach
+
+attach 方法主要是初始化参数和创建window对象
+
+```java
+  final void attach(Context context, ActivityThread aThread,
+            Instrumentation instr, IBinder token, int ident,
+            Application application, Intent intent, ActivityInfo info,
+            CharSequence title, Activity parent, String id,
+            NonConfigurationInstances lastNonConfigurationInstances,
+            Configuration config, String referrer, IVoiceInteractor voiceInteractor,
+            Window window, ActivityConfigCallback activityConfigCallback, IBinder assistToken,
+            IBinder shareableActivityToken) {
+        attachBaseContext(context);
+        // 创建window
+        mWindow = new PhoneWindow(this, window, activityConfigCallback);
+        mWindow.setWindowControllerCallback(mWindowControllerCallback);
+        mWindow.setCallback(this);
+        mWindow.setOnWindowDismissedCallback(this);
+        ...
+        mWindow.setWindowManager(
+                (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),
+                mToken, mComponent.flattenToString(),
+                (info.flags & ActivityInfo.FLAG_HARDWARE_ACCELERATED) != 0);
+        if (mParent != null) {
+            mWindow.setContainer(mParent.getWindow());
+        }
+        mWindowManager = mWindow.getWindowManager();
+        mCurrentConfig = config;
+
+        mWindow.setColorMode(info.colorMode);
+        mWindow.setPreferMinimalPostProcessing(
+                (info.flags & ActivityInfo.FLAG_PREFER_MINIMAL_POST_PROCESSING) != 0);
+
+        getAutofillClientController().onActivityAttached(application);
+        setContentCaptureOptions(application.getContentCaptureOptions());
+    }
+```
+
 #### performCreate
 
 ```java
