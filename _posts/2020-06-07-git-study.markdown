@@ -29,6 +29,15 @@ $ man git-<verb>
   
 ```
 
+这些配置最终会写到window平台的`C:\Users\用户名\.gitconfig` 或者mac平台的 `~/.gitconfig` 文件中
+
+```java
+[user]
+	name = name
+	email = name@example.com
+....
+```
+
 ### 基本命令
 
 ```java
