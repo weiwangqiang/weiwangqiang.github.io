@@ -205,9 +205,10 @@ generic_x86:/ # pm uninstall com.example.MyApp //卸载apk
 ```java
 generic_x86_64:/ $ pm -lf
 package:/system/priv-app/ProxyHandler/ProxyHandler.apk=com.android.proxyhandler
-
-  ......
+......
 ```
+
+
 
 pm详细命令如下：
 
