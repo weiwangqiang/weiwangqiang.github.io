@@ -18,7 +18,7 @@ tags:
 
 ```java
     <application
-    	 ....
+         ....
         android:supportsRtl="true">
     </application>
 ```
@@ -52,7 +52,6 @@ tags:
 我们可以动态设置系统的语言来模仿用户环境，如下将app的配置设置为波斯语，当然，最简单的是到手机设置中直接设置当前语言为波斯语（设置有风险，语言需谨慎～～）：
 
 ```java
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -108,7 +107,6 @@ tags:
 同学们发现没有，内容是英文的，而伊朗是用波斯语言，会不会与语言有关呢？我们再加一个textView显示波斯语言的：
 
 ```xml
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="50dp"
@@ -125,54 +123,54 @@ tags:
 
  Android提供了Java代码动态获取当前布局方向，如下：
 
- ```java
-     /**
-     * 
-     * @param context
-     * @return 如果是右到左布局，返回true
-     */
-    public boolean isRtl(Context context) {
-        return context.getResources().getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-    }
- ```
+```java
+    /**
+    * 
+    * @param context
+    * @return 如果是右到左布局，返回true
+    */
+   public boolean isRtl(Context context) {
+       return context.getResources().getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+   }
+```
 
  然后我们可以通过该方法设置textView的gravity
 
- ```java
-   textView.setGravity(isRtl(this) ? Gravity.RIGHT:Gravity.LEFT);
- ```
+```java
+  textView.setGravity(isRtl(this) ? Gravity.RIGHT:Gravity.LEFT);
+```
 
 结果大家显然都知道了，这里就不列出来了。
 
 但是这样还是觉得很麻烦，有没有更便捷的属性？有！
 
-name | description | 描述
----------|-------|---------
-android:layoutDirection|attribute for setting the direction of a component's layout|设置组件的布局排列方向|
-android:textDirection | attribute for setting the direction of a component's text	|设置组件的文字排列方向
-android:textAlignment	|attribute for setting the alignment of a component's text	|设置文字的对齐方式
-getLayoutDirectionFromLocale() |	method for getting the Locale-specified direction	|获取指定地区的惯用布局方式
+| name                           | description                                                 | 描述            |
+| ------------------------------ | ----------------------------------------------------------- | ------------- |
+| android:layoutDirection        | attribute for setting the direction of a component's layout | 设置组件的布局排列方向   |
+| android:textDirection          | attribute for setting the direction of a component's text   | 设置组件的文字排列方向   |
+| android:textAlignment          | attribute for setting the alignment of a component's text   | 设置文字的对齐方式     |
+| getLayoutDirectionFromLocale() | method for getting the Locale-specified direction           | 获取指定地区的惯用布局方式 |
 
 其中，android:layoutDirection和android:textDirection的值有：
 
-value|type|description
-------|-----|-----
-inherit|int|Horizontal layout direction is inherited <br> 继承水平方向
-rtl|int|Horizontal layout direction is from Right to Left <br>布局方向是右到左
-ltr|int|Horizontal layout direction is from Left to Right <br>布局方向是左到右
-locale|int|Horizontal layout direction is deduced from the default language script for the locale <br>从区域设置的默认语言脚本推导出水平布局方向
+| value   | type | description                                                                                                      |
+| ------- | ---- | ---------------------------------------------------------------------------------------------------------------- |
+| inherit | int  | Horizontal layout direction is inherited <br> 继承水平方向                                                             |
+| rtl     | int  | Horizontal layout direction is from Right to Left <br>布局方向是右到左                                                   |
+| ltr     | int  | Horizontal layout direction is from Left to Right <br>布局方向是左到右                                                   |
+| locale  | int  | Horizontal layout direction is deduced from the default language script for the locale <br>从区域设置的默认语言脚本推导出水平布局方向 |
 
 android:textAlignment的值有：
 
-Constant|value|Description
------|------|------
-center| 4	| Center the paragraph, for example: ALIGN_CENTER.<br> 居中
-gravity	|1|	Default for the root view. The gravity determines the alignment, ALIGN_NORMAL, ALIGN_CENTER, or ALIGN_OPPOSITE, which are relative to each paragraph’s text direction.<br>由view通过gravity属性定义对齐方式
-inherit	|0|	Default. <br> 默认
-textEnd	|3|	Align to the end of the paragraph, for example: ALIGN_OPPOSITE. <br> 与段落的末尾对齐
-textStart|	2|	Align to the start of the paragraph, for example: ALIGN_NORMAL.<br> 与段落的开头对齐
-viewEnd|	6|	Align to the end of the view, which is ALIGN_RIGHT if the view’s resolved layoutDirection is LTR, and ALIGN_LEFT otherwise.<br> 与view的末尾对齐，
-viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’s resolved layoutDirection is LTR, and ALIGN_RIGHT otherwise.<br> 与view的开头对齐
+| Constant  | value | Description                                                                                                                                                                                      |
+| --------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| center    | 4     | Center the paragraph, for example: ALIGN_CENTER.<br> 居中                                                                                                                                          |
+| gravity   | 1     | Default for the root view. The gravity determines the alignment, ALIGN_NORMAL, ALIGN_CENTER, or ALIGN_OPPOSITE, which are relative to each paragraph’s text direction.<br>由view通过gravity属性定义对齐方式 |
+| inherit   | 0     | Default. <br> 默认                                                                                                                                                                                 |
+| textEnd   | 3     | Align to the end of the paragraph, for example: ALIGN_OPPOSITE. <br> 与段落的末尾对齐                                                                                                                    |
+| textStart | 2     | Align to the start of the paragraph, for example: ALIGN_NORMAL.<br> 与段落的开头对齐                                                                                                                     |
+| viewEnd   | 6     | Align to the end of the view, which is ALIGN_RIGHT if the view’s resolved layoutDirection is LTR, and ALIGN_LEFT otherwise.<br> 与view的末尾对齐，                                                      |
+| viewStart | 5     | Align to the start of the view, which is ALIGN_LEFT if the view’s resolved layoutDirection is LTR, and ALIGN_RIGHT otherwise.<br> 与view的开头对齐                                                     |
 
 还是原来的布局，这里多加一行
 
@@ -207,7 +205,6 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 然后在Androidmanifest文件中引用该style
 
 ```xml
-
     <application
         ......
         android:supportsRtl="true"
@@ -219,18 +216,16 @@ viewStart|	5|	Align to the start of the view, which is ALIGN_LEFT if the view’
 类似的还有EditText
 
 ```java
-
     <style name="AppTheme" parent="@style/Theme.AppCompat.Light.NoActionBar">
-		 .....
+         .....
         <item name="editTextStyle">@style/EditTextStyle</item>
     </style>
-    
+
     <style name="EditTextStyle" parent="@android:style/Widget.EditText">
         <item name="android:textAlignment">viewStart</item>
         <item name="android:gravity">start</item>
         <item name="android:textDirection">locale</item>
     </style>
-
 ```
 
 ## 2、组件之间的相对位置
@@ -404,14 +399,13 @@ button2同时设置了layout_marginStart和paddingStart，并且指定layoutDire
 
 在项目中，由于英文是强左到右，波斯文是强右到左的，在混排的时候，就会存在文字方向的冲突，需要unicode来强制指定文字的方向，这里做总结。
 
-unicode|说明|翻译：代码
------|------|-------
-\u202A|将英文，阿拉伯数字等非强右到左文字放在波斯文等强RTL文字的右边|早上6点： قبل از ظهر  \u202A6
-\u200F|也是将英文，阿拉伯数字放在波斯文的右边，区别是与波斯文之间没有空格|早上6点：قبل از ظهر\u200F6
-\u202E|获取文字的镜像文|12: \u202E21
+| unicode | 说明                                | 翻译：代码                     |
+| ------- | --------------------------------- | ------------------------- |
+| \u202A  | 将英文，阿拉伯数字等非强右到左文字放在波斯文等强RTL文字的右边  | 早上6点： قبل از ظهر  \u202A6 |
+| \u200F  | 也是将英文，阿拉伯数字放在波斯文的右边，区别是与波斯文之间没有空格 | 早上6点：قبل از ظهر\u200F6    |
+| \u202E  | 获取文字的镜像文                          | 12: \u202E21              |
 
-
-在显示文件路径时候，如果包含波斯语，会导致路径显示错误的情况，需要在string的前后加上\u202D 和\u202C
+在显示文件路径时候，如果包含波斯语，会导致路径显示错误的情况，需要在string的前后加上\u202D 和\u202C（更多参考([UTF-8 常用标点符号](https://www.runoob.com/charsets/ref-utf-punctuation.html))）
 
 ```java
         String content = "sdcard\\فارسی\\3D\\فارسی.mp3";
